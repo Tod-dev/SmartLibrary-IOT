@@ -20,9 +20,7 @@ app.use("/libri", routes_libri);
 app.use(unknownEndpoint);
 
 //!Server listening
-app.listen(
-    5000//process.env.PORT,
-     ,() => start());
+app.listen(process.env.PORT,() => start());
 
 const start = () => {
   console.log(`App running on port ${process.env.PORT}.`);
