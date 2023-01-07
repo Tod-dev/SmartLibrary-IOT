@@ -1,0 +1,29 @@
+{
+  "name": "smartlibrary-iot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tod-dev/SmartLibrary-IOT.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tod-dev/SmartLibrary-IOT/issues"
+  },
+  "homepage": "https://github.com/Tod-dev/SmartLibrary-IOT#readme",
+  "dependencies": {
+    "express": "4.18.1",
+    "pg": "8.7.3",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0"
+  }
+}
