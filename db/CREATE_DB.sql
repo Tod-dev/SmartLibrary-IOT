@@ -41,3 +41,6 @@ create table prestito(
 	data_inizio_prestito date not null,
 	data_fine_prestito date null
 )
+
+
+ALTER TABLE prestito ADD COLUMN stato varchar CONSTRAINT stato_values check (stato in ('prenotato', 'prelevato', 'consegnato'));
