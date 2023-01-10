@@ -1,3 +1,4 @@
 node_modules
 .env
 bridge/config.ini
+bridge

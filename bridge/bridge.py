@@ -13,10 +13,6 @@ import configparser
 import pathlib
 import paho.mqtt.client as mqtt
 
-RITIRO = 1
-RICONSEGNA = 2
-CHECKPRENOTAZIONE = 3
-
 class Bridge():
 
 	def __init__(self):
@@ -25,8 +21,8 @@ class Bridge():
 		self.config.read(self.config_path)
 		self.setupTotem()
 		self.setupSerial()
-		self.setupHTTP()
-		self.setupMQTT()
+		#self.setupHTTP()
+		#self.setupMQTT()
     
 	def setupTotem(self):
 		self.id = self.config.get("Totem","ID")
@@ -92,24 +88,46 @@ class Bridge():
 		print(msg.topic + " " + str(msg.payload))
 		if msg.topic==self.topic:
 			#gestisci il messaggio e scrivi sulla seriale
-			#In msg c'è IDScompartimento
-			self.outSeriale(4, int(msg))
+			#In msg c'è IDScompartimento/CODICE/IDPRENOTAZIONE
+			msg = msg.split('/')
+			idscompartimento = msg[0]
+			codice = msg[1]
+			idprenotazione = msg[2]
+			idscompartimento = idscompartimento.to_bytes(2, 'little')
+			codice = codice.to_bytes(1, 'little')
+			pacchetto = list()
+			pacchetto.append(b'\xff')
+			pacchetto.append(idscompartimento[0].to_bytes(1, 'little'))
+			pacchetto.append(idscompartimento[1].to_bytes(1, 'little'))
+			pacchetto.append(codice)
+			pacchetto.append(b'\xfe')
+			#print(pacchetto)
+			self.ser.write(pacchetto)
 
-	def outSeriale(self, nbytes, val):
+	def outSeriale(self, ncampi, val):
 		"""
 		Params:
 		-------
-		nbytes: numero di bytes da inviare (intero)
-		val: intero da inviare
+	 	nbytes: numero di bytes da inviare (intero)
+		val: lista di interi da inviare
 
 		Output:
 		-------
 		Costruisce un pacchetto ff|nbytes|byte1|byte2|...|fe e lo manda sulla seriale
 		"""
-		val = val.to_bytes(nbytes, 'little')
-		nbytes = nbytes.to_bytes(1, 'little')
-		pacchetto = bytearray(b'\xff'+nbytes+val+b'\xfe')
-		self.ser.write(pacchetto)
+		idscompartimento = 400
+		codice = 5
+		
+		idscompartimento = idscompartimento.to_bytes(2, 'little')
+		codice = codice.to_bytes(1, 'little')
+		pacchetto = list()
+		pacchetto.append(b'\xff')
+		pacchetto.append(idscompartimento[0].to_bytes(1, 'little'))
+		pacchetto.append(idscompartimento[1].to_bytes(1, 'little'))
+		pacchetto.append(codice)
+		pacchetto.append(b'\xfe')
+		print(pacchetto)
+		#self.ser.write(pacchetto)
 
 	def loop(self):
 		# infinite loop for serial managing
@@ -132,24 +150,17 @@ class Bridge():
 
 	def useData(self):
 		# I have received a packet from the serial port. I can use it
-		if len(self.inbuffer)<3:   # at least header, size, footer
+		if len(self.inbuffer)<3:
 			return False
 		# split parts
 		if self.inbuffer[0] != b'\xff':
 			return False
-
-		numval = int.from_bytes(self.inbuffer[1], byteorder='little')	#NUMERO CAMPI
-	
-		strval = ""
-		for i in range (numval):
-			val = int.from_bytes(self.inbuffer[i+2], byteorder='little')
-			strval += "%d" % (val)
-			if i < numval - 1:
-				strval += "/"
-			#print(strval)
-			#self.clientMQTT.publish('MYsensor/{:d}'.format(i),'{:d}'.format(val))
-
-		self.httpRequest(strval)
+		print(self.inbuffer)
+		idscompartimento = int.from_bytes(self.inbuffer[1], byteorder='little')
+		idscompartimento += (int.from_bytes(self.inbuffer[2], byteorder='little') << 8)
+		intero = int.from_bytes(self.inbuffer[3], byteorder='little')
+		#self.clientMQTT.publish('MYsensor/{:d}'.format(i),'{:d}'.format(val))
+		#self.httpRequest(strval)
 
 	#COMUNICAZIONE BRIDGE->SERVER
 	def httpRequest(self, val):
@@ -160,15 +171,29 @@ class Bridge():
 		r = requests.put(url = self._APIURL+idprenotazione, data = d, headers=self._HEADERS)
 		print(r.text)
 
-		if azione == CHECKPRENOTAZIONE:
-			#elabora risposta
-			#RESPONSE: 1 = CODICE VALIDO, 2 = CODICE NON VALIDO
-			response = 1 #CODICE VALIDO
-			self.outSeriale(1, response)
-
 
 
 
 if __name__ == '__main__':
 	br=Bridge()
 	br.loop()
+
+	idscompartimento = 400
+	codice = 5
+	idprenotazione = 6
+	ncampi = 2
+	ncampi = ncampi.to_bytes(1, 'little')
+	print(ncampi)
+	idscompartimento = idscompartimento.to_bytes(2, 'little')
+	codice = codice.to_bytes(1, 'little')
+	pacchetto = list()
+	pacchetto.append(b'\xff')
+	pacchetto.append(ncampi)
+	pacchetto.append(idscompartimento)
+	pacchetto.append(codice)
+	pacchetto.append(b'\xfe')
+	print(pacchetto)
+	val = int.from_bytes(pacchetto[2], byteorder='little')
+	val2 = int.from_bytes(pacchetto[3], byteorder='little')
+	print(val)
+	print(val2)
