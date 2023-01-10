@@ -12,6 +12,16 @@ import requests
 import configparser
 import pathlib
 import paho.mqtt.client as mqtt
+import json
+
+#INTERO
+LIBRO_RITIRATO = 1
+LIBRO_RICONSEGNATO = 2
+
+#CODICE
+LIBRO_PRENOTATO = 1
+LIBRO_PRONTO_PER_RITIRO = 2
+NUM_SCOMPARTIMENTO = 3
 
 class Bridge():
 
@@ -21,12 +31,13 @@ class Bridge():
 		self.config.read(self.config_path)
 		self.setupTotem()
 		self.setupSerial()
-		#self.setupHTTP()
+		self.setupHTTP()
 		#self.setupMQTT()
     
 	def setupTotem(self):
-		self.id = self.config.get("Totem","ID")
+		self.id = self.config.get("TOTEM","ID")
 		self.topic = "TOTEMS/" + self.id
+		self.elenco_prenotazioni = dict()
 
 	def setupSerial(self):
 		# open serial port
@@ -70,9 +81,9 @@ class Bridge():
 		self.clientMQTT.loop_start()
 
 	def setupHTTP(self):
-		self._APIURL = "https://www.url.com/prenotazioni/"
-		self._APIKEY = "aio_sTtf00jBu12ileE6HCoBl23KZ7MK"
-		self._HEADERS = {"X-AIO-Key": self._APIKEY}
+		self.APIURL = self.config.get("SERVER", "URL")
+		#self.APIKEY = "aio_sTtf00jBu12ileE6HCoBl23KZ7MK"
+		#self.HEADERS = {"X-AIO-Key": self.APIKEY}
 
 	def on_connect(self, client, userdata, flags, rc):
 		print("Connected with result code " + str(rc))
@@ -93,31 +104,17 @@ class Bridge():
 			idscompartimento = msg[0]
 			codice = msg[1]
 			idprenotazione = msg[2]
-			idscompartimento = idscompartimento.to_bytes(2, 'little')
-			codice = codice.to_bytes(1, 'little')
-			pacchetto = list()
-			pacchetto.append(b'\xff')
-			pacchetto.append(idscompartimento[0].to_bytes(1, 'little'))
-			pacchetto.append(idscompartimento[1].to_bytes(1, 'little'))
-			pacchetto.append(codice)
-			pacchetto.append(b'\xfe')
-			#print(pacchetto)
-			self.ser.write(pacchetto)
+			self.outSeriale(idscompartimento, codice)
 
-	def outSeriale(self, ncampi, val):
-		"""
-		Params:
-		-------
-	 	nbytes: numero di bytes da inviare (intero)
-		val: lista di interi da inviare
+			if codice == LIBRO_PRONTO_PER_RITIRO or codice == NUM_SCOMPARTIMENTO:
+				self.elenco_prenotazioni[idscompartimento] = idprenotazione
 
-		Output:
-		-------
-		Costruisce un pacchetto ff|nbytes|byte1|byte2|...|fe e lo manda sulla seriale
+	def outSeriale(self, idscompartimento, codice):
 		"""
-		idscompartimento = 400
-		codice = 5
-		
+		PACCHETTO
+		---------
+		FF|idscomp1|idscomp2|codice|FE
+		"""
 		idscompartimento = idscompartimento.to_bytes(2, 'little')
 		codice = codice.to_bytes(1, 'little')
 		pacchetto = list()
@@ -126,8 +123,8 @@ class Bridge():
 		pacchetto.append(idscompartimento[1].to_bytes(1, 'little'))
 		pacchetto.append(codice)
 		pacchetto.append(b'\xfe')
-		print(pacchetto)
-		#self.ser.write(pacchetto)
+		#print(pacchetto)
+		self.ser.write(pacchetto)
 
 	def loop(self):
 		# infinite loop for serial managing
@@ -139,19 +136,18 @@ class Bridge():
 				if self.ser.in_waiting>0:
 					# data available from the serial port
 					lastchar=self.ser.read(1)
+					self.inbuffer.append(lastchar)
 
-					if lastchar==b'\xfe': #EOL
+					if lastchar==b'\xfe' and len(self.inbuffer) == 5: #EOL
 						print("\nValue received")
 						self.useData()
 						self.inbuffer = []
-					else:
+					elif lastchar==b'\xfe' and self.inbuffer[0] != b'\xff':
 						# append
-						self.inbuffer.append(lastchar)
+						self.inbuffer = []
 
 	def useData(self):
 		# I have received a packet from the serial port. I can use it
-		if len(self.inbuffer)<3:
-			return False
 		# split parts
 		if self.inbuffer[0] != b'\xff':
 			return False
@@ -159,16 +155,29 @@ class Bridge():
 		idscompartimento = int.from_bytes(self.inbuffer[1], byteorder='little')
 		idscompartimento += (int.from_bytes(self.inbuffer[2], byteorder='little') << 8)
 		intero = int.from_bytes(self.inbuffer[3], byteorder='little')
+
+		if intero == LIBRO_RITIRATO or intero == LIBRO_RICONSEGNATO:
+			#risali al codice prenotazione associato e conferma al server il ritiro
+			if idscompartimento in self.elenco_prenotazioni:
+				idprenotazione = self.elenco_prenotazioni[idscompartimento]
+
+				if intero == LIBRO_RITIRATO:
+					self.httpRequest(idprenotazione, idscompartimento, 'ritirato')
+				else:
+					self.httpRequest(idprenotazione, idscompartimento, 'riconsegnato')
+
+				del self.elenco_prenotazioni[idscompartimento]
+			else:
+				print("Codice prenotazione non trovato!")
 		#self.clientMQTT.publish('MYsensor/{:d}'.format(i),'{:d}'.format(val))
 		#self.httpRequest(strval)
 
 	#COMUNICAZIONE BRIDGE->SERVER
-	def httpRequest(self, val):
-		val = val.split('/')
-		idprenotazione = val[0]
-		azione = val[1]
-		d = {'value': azione}
-		r = requests.put(url = self._APIURL+idprenotazione, data = d, headers=self._HEADERS)
+	def httpRequest(self, idprenotazione, idscompartimento, codice):
+		d = {'totemID': self.id, 'codicePrenotazione': idprenotazione, 'idScompartimento': idscompartimento, 'codice': codice}
+		d = json.dumps(d, indent=4)
+		r = requests.put(url = self.APIURL+idprenotazione, data = d)
+		#r = requests.put(url = self.APIURL+idprenotazione, data = d, headers=self.HEADERS)
 		print(r.text)
 
 
@@ -177,23 +186,3 @@ class Bridge():
 if __name__ == '__main__':
 	br=Bridge()
 	br.loop()
-
-	idscompartimento = 400
-	codice = 5
-	idprenotazione = 6
-	ncampi = 2
-	ncampi = ncampi.to_bytes(1, 'little')
-	print(ncampi)
-	idscompartimento = idscompartimento.to_bytes(2, 'little')
-	codice = codice.to_bytes(1, 'little')
-	pacchetto = list()
-	pacchetto.append(b'\xff')
-	pacchetto.append(ncampi)
-	pacchetto.append(idscompartimento)
-	pacchetto.append(codice)
-	pacchetto.append(b'\xfe')
-	print(pacchetto)
-	val = int.from_bytes(pacchetto[2], byteorder='little')
-	val2 = int.from_bytes(pacchetto[3], byteorder='little')
-	print(val)
-	print(val2)
