@@ -1,46 +1,44 @@
-create table genere(
+create table generi(
 	id int not null primary key,
 	nome varchar(255) 
-)
+);
 
-create table autore(
+create table autori(
 	id int not null primary key,
 	nome varchar(255) 
-)
+);
 
-create table totem(
+create table totems(
 	id int not null primary key,
 	qr_code_link varchar(255),
 	latitude decimal(15,10),
 	longitude decimal(15,10)
-)
+);
 
-create table scompartimento(
+create table scompartimenti(
 	id int not null primary key,	
-	totem_id int references totem(id)
-)
+	totem_id int references totems(id)
+);
 
-create table libro(
+create table libri(
 	id int not null primary key,
 	nome varchar(255),
-	genere_id int references genere(id),
-	autore_id int references autore(id),
-	scompartimento_id int   references scompartimento(id)
-)
+	genere_id int references generi(id),
+	autore_id int references autori(id),
+	scompartimento_id int   references scompartimenti(id)
+);
 
-create table utente(
+create table utenti(
 	id int not null primary key,
 	username varchar(255),
 	pwd varchar(255)	
-)
+);
 
-create table prestito(
+create table prestiti(
 	id int not null primary key,
-	utente_id int not null references utente(id),
-	libro_id int not null references libro(id),
+	utente_id int not null references utenti(id),
+	libro_id int not null references libri(id),
 	data_inizio_prestito date not null,
-	data_fine_prestito date null
-)
-
-
-ALTER TABLE prestito ADD COLUMN stato varchar CONSTRAINT stato_values check (stato in ('prenotato', 'prelevato', 'consegnato'));
+	data_fine_prestito date null,
+	stato varchar CONSTRAINT stato_values check (stato in ('prenotato', 'prelevato', 'consegnato'))
+);
