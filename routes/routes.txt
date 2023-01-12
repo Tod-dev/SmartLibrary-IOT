@@ -1,0 +1,13 @@
+GET localhost:5000/totems/IDTOTEM 
+    ritorna il totem (dati del totem, posizione...) e i libri contenuti in quel totem 
+
+GET localhost:5000/totems?nomeLibro=NOMELIBRO 
+    ritorna i totem che contengono quel libro 
+    
+POST localhost:5000/prenotazioni 
+    Inserisce una nuova prenotazione di un libro su un totem (parametri nel body) 
+
+PUT localhost:5000/prenotazioni/IDPRENOTAZIONE 
+    Aggiorna lo stato della prenotazione (parametro stato: prenotato, prelevato, consegnato) 
+
+POST localhost:5000/login e signup 

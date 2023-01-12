@@ -4,7 +4,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 
 //!import routes
-const routes_libri = require("./routes/libri");
+const routes_totems = require("./routes/totems");
 const { unknownEndpoint } = require("./routes/default");
 
 //!configuration
@@ -16,7 +16,7 @@ app.use(express.json());
 //!PostgreSQL connection & TEST
 
 //!Route Middlewares
-app.use("/libri", routes_libri);
+app.use("/totems", routes_totems);
 app.use(unknownEndpoint);
 
 //!Server listening
