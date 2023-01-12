@@ -1,0 +1,8 @@
+PER INVIARE I MESSAGGI
+
+Serial.write(0xFF);
+int i = 400;
+Serial.write((byte)i);
+Serial.write((byte)i>>7);
+Serial.write(2);
+Serial.write(0xFE);
