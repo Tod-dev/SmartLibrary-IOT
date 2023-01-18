@@ -1,13 +1,12 @@
 const router = require("express").Router();
-const totems_controller = require("../controllers/totems_controller");
+const prenotazioni_controller = require("../controllers/prenotazioni_controller");
 
-//GET localhost:5000/totems?nomeLibro=NOMELIBRO 
-router.get("/", (req, res, next) => {
-  totems_controller
-    .getTotemsFromBook(req, res)
+// POST localhost:5000/prenotazioni 
+router.post("/", (req, res, next) => {
+  prenotazioni_controller.insertPrenotazione(req, res)
     .then((response) => {
       //console.log("RESPONSE:", response);
-      res.status(200).json(response);
+      res.status(201).json(response);
     })
     .catch((error) => {
       console.log("ERROR:", error);
@@ -15,18 +14,18 @@ router.get("/", (req, res, next) => {
     });
 });
 
-//GET /totems/IDTOTEM  -> getTotemData
-router.get("/:id", (req, res, next) => {
-  totems_controller
-    .getTotemData(req, res)
+//PUT localhost:5000/prenotazioni/IDPRENOTAZIONE
+router.put("/:id", (req, res, next) => {
+  prenotazioni_controller.updatePrenotazione(req, res)
     .then((response) => {
       //console.log("RESPONSE:", response);
-      res.status(200).json(response);
+      res.status(201).json(response);
     })
     .catch((error) => {
       console.log("ERROR:", error);
       res.status(400).json(error);
     });
 });
+
 
 module.exports = router;

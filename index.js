@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 
 //!import routes
 const routes_totems = require("./routes/totems");
+const routes_prenotazioni = require("./routes/prenotazioni");
 const { unknownEndpoint } = require("./routes/default");
 
 //!configuration
@@ -17,6 +18,7 @@ app.use(express.json());
 
 //!Route Middlewares
 app.use("/totems", routes_totems);
+app.use("/prenotazioni", routes_prenotazioni);
 app.use(unknownEndpoint);
 
 //!Server listening

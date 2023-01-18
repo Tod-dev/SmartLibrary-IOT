@@ -42,3 +42,5 @@ create table prestiti(
 	data_fine_prestito date null,
 	stato varchar CONSTRAINT stato_values check (stato in ('prenotato', 'prelevato', 'consegnato'))
 );
+
+CREATE SEQUENCE serialPrestiti START 4;

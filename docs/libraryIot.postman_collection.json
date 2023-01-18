@@ -1,0 +1,114 @@
+{
+	"info": {
+		"_postman_id": "c0d41ec4-948c-465d-97d7-2159380ce007",
+		"name": "libraryIot",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25088851"
+	},
+	"item": [
+		{
+			"name": "get totem",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/totems/1",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"totems",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get totems from nomeLibro",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/totems?nomeLibro=I Nuovi Barbari",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"totems"
+					],
+					"query": [
+						{
+							"key": "nomeLibro",
+							"value": "Dylan Dog - I Nuovi Barbari",
+							"disabled": true
+						},
+						{
+							"key": "nomeLibro",
+							"value": "Dylan ",
+							"disabled": true
+						},
+						{
+							"key": "nomeLibro",
+							"value": "I Nuovi Barbari"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "insert prenotazione",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"libro\": 1,\n    \"utente\": 2\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/prenotazioni",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"prenotazioni"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update stato prenotazione",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"stato\" : \"consegnato\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/prenotazioni/1",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"prenotazioni",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
