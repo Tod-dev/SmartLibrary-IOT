@@ -1,5 +1,5 @@
 import logging
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters
 from config import BOTKEY,SERVER_URL
 import requests
 from datetime import datetime
@@ -27,8 +27,27 @@ def help(update, context):
 #TODO
 def prenota(update, context):
     """Send a message when the command /now is issued."""
+    print(update.message.text)
     #r = requests.get('{}/totems?nomeLibro={}'.format(SERVER_URL,nome))
-    update.message.reply_text('Not yet implemented :(')
+    msg = update.message.text.split('/prenota ')
+    if len(msg) == 1:
+        #ho solo la scritta /prenota
+        update.message.reply_text("Per prenotare un libro scrivi /prenota seguito dal nome del libro che desideri")
+    else:
+        #ho anche il nome del libro
+        libro = msg[1]  #SECONDO ME BISOGNA METTERLO LOWER (msg[1].lower()) PER RENDERE PIU' FACILE LA RICERCA DEL LIBRO
+        
+        r = requests.get('{}/totems?nomeLibro={}'.format(SERVER_URL, libro))
+        print(r.text)
+        if r.text == '[]':
+            update.message.reply_text('Spiacenti, ma il libro {} non è disponibile al momento'.format(libro))
+            return
+
+        update.message.reply_text('Stai prenotando il libro: '+libro)
+        #CREAZIONE CODICE DI PRENOTAZIONE E DISPLAY ALL'UTENTE
+
+        #PUBLISH MQTT AL TOTEM CHE CONTIENE QUEL LIBRO
+
 #TODO
 def ritira(update, context):
     """Send a message when the command /now is issued."""
