@@ -3,6 +3,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, filters
 from config import BOTKEY,SERVER_URL
 import requests
 from datetime import datetime
+import json
+from setupMqtt import ClientMQTT
 
 #LOGGING
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -42,11 +44,23 @@ def prenota(update, context):
         if r.text == '[]':
             update.message.reply_text('Spiacenti, ma il libro {} non è disponibile al momento'.format(libro))
             return
-
+        
+        r = json.loads(r.text)[0]
+        idLibro = r['id']
         update.message.reply_text('Stai prenotando il libro: '+libro)
-        #CREAZIONE CODICE DI PRENOTAZIONE E DISPLAY ALL'UTENTE
 
+        #CREAZIONE CODICE DI PRENOTAZIONE E DISPLAY ALL'UTENTE
+        d = dict()
+        d["utente"] = 2
+        d["libro"] = idLibro
+        #d = json.dumps(d)
+        print(d)
+        r = requests.post(url=SERVER_URL+"/prenotazioni", data=d)
+        print(r.text)
         #PUBLISH MQTT AL TOTEM CHE CONTIENE QUEL LIBRO
+        mqttMessage = "IDSCOMPARTIMENTO/CODICE/IDPRENOTAZIONE"
+        idTotem = 1
+        mqttClient.publishMQTT(mqttMessage, idTotem)
 
 #TODO
 def ritira(update, context):
@@ -78,3 +92,4 @@ def startBot():
 if __name__ == '__main__':
     updater = startBot()
     updater.idle()
+    mqttClient = ClientMQTT()
