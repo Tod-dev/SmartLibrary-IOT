@@ -11,8 +11,10 @@ import serial.tools.list_ports
 import requests
 import configparser
 import pathlib
-import paho.mqtt.client as mqtt
+import paho.mqtt.client as paho
+from paho import mqtt
 import json
+import ssl
 
 #INTERO
 LIBRO_RITIRATO = 1
@@ -31,8 +33,8 @@ class Bridge():
 		self.config.read(self.config_path)
 		self.setupTotem()
 		self.setupSerial()
-		self.setupHTTP()
-		#self.setupMQTT()
+		#self.setupHTTP()
+		self.setupMQTT()
     
 	def setupTotem(self):
 		self.id = self.config.get("TOTEM","ID")
@@ -69,23 +71,25 @@ class Bridge():
 		self.inbuffer = []
 
 	def setupMQTT(self):
-		self.clientMQTT = mqtt.Client()
+		self.clientMQTT = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv5)
+		MQTT_USER = self.config.get("MQTT", "BrokerUsername")
+		MQTT_PWD = self.config.get("MQTT", "BrokerPassword")
+		self.clientMQTT.username_pw_set(MQTT_USER, MQTT_PWD)
+		self.clientMQTT.tls_set(tls_version=ssl.PROTOCOL_TLS, cert_reqs=ssl.CERT_NONE)
 		self.clientMQTT.on_connect = self.on_connect
 		self.clientMQTT.on_message = self.on_message
 		print("connecting to MQTT broker...")
 		self.clientMQTT.connect(
-			self.config.get("MQTT","Server", fallback= "broker.hivemq.com"),
-			self.config.getint("MQTT","Port", fallback= 1883),
+			self.config.get("MQTT","Server"),
+			self.config.getint("MQTT","Port"),
 			60)
-
 		self.clientMQTT.loop_start()
-
 	def setupHTTP(self):
 		self.APIURL = self.config.get("SERVER", "URL")
 		#self.APIKEY = "aio_sTtf00jBu12ileE6HCoBl23KZ7MK"
 		#self.HEADERS = {"X-AIO-Key": self.APIKEY}
 
-	def on_connect(self, client, userdata, flags, rc):
+	def on_connect(self, client, userdata, flags, rc, properties=None):
 		print("Connected with result code " + str(rc))
 
 		# Subscribing in on_connect() means that if we lose the connection and
@@ -97,6 +101,7 @@ class Bridge():
 	# COMUNICAZIONE SERVER->BRIDGE->ARDUINO
 	def on_message(self, client, userdata, msg):
 		print(msg.topic + " " + str(msg.payload))
+		"""
 		if msg.topic==self.topic:
 			#gestisci il messaggio e scrivi sulla seriale
 			#In msg c'è IDScompartimento/CODICE/IDPRENOTAZIONE
@@ -108,7 +113,7 @@ class Bridge():
 
 			if codice == LIBRO_PRONTO_PER_RITIRO or codice == NUM_SCOMPARTIMENTO:
 				self.elenco_prenotazioni[idscompartimento] = idprenotazione
-
+		"""
 	def outSeriale(self, idscompartimento, codice):
 		"""
 		PACCHETTO
