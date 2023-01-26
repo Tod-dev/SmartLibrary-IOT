@@ -1,5 +1,6 @@
-
 const mqtt = require('mqtt');
+
+let mqttConnection;
 
 class MqttHandler {
   constructor() {
@@ -47,4 +48,16 @@ class MqttHandler {
   }
 }
 
-module.exports = MqttHandler;
+module.exports.connectMqtt =  async () => {
+  mqttConnection = new MqttHandler();
+  mqttConnection.connect();
+}
+
+module.exports.getMqttConnection = () => {
+  return mqttConnection;
+}
+
+
+module.exports.sendMessage =  async (message) => {
+  mqttConnection.sendMessage(message);
+}

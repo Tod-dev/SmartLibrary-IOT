@@ -14,7 +14,9 @@ dotenv.config();
 app.use(cors());
 app.use(express.json());
 
-
+//MQTT
+const MqttHandler = require("./MqttHandler");
+MqttHandler.connectMqtt();
 
 
 //!Route Middlewares

@@ -1,5 +1,5 @@
 const db = require("../dbConn");
-const MqttHandler = require('../MqttHandler');
+const MqttHandler = require("../MqttHandler");
 
 
 /*
@@ -36,9 +36,7 @@ exports.insertPrenotazione = async (req, res) => {
     );
     /* SEND MQTT MESSAGE */
     //MQTT
-    const mqttClient = new MqttHandler();
-    mqttClient.connect();
-    mqttClient.sendMessage("CIAO");//TODO MESSAGE
+    MqttHandler.sendMessage("CIAO2")
 
     return { id: id, descrizione: `Prestito inserito correttamente ${id}, Message sent to mqtt` };
   } catch (error) {
