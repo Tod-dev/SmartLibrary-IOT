@@ -16,19 +16,19 @@ def getOperations():
 
 #COMANDI
 def start(update, context):
-    """Send a message when the command /now is issued."""
+    """Send a message when the command /start is issued."""
     username = update.message.chat.username
     update.message.reply_text('Hello, {}!\n/help for documentation.'.format(username))
 
 def help(update, context):
-    """Send a message when the command /now is issued."""
+    """Send a message when the command /help is issued."""
     operazioniDesc = map(lambda x: '/{} , {} un libro.'.format(x,x), getOperations())
     text = '\n'.join(operazioniDesc)
     update.message.reply_text(text)
 
 #TODO
 def prenota(update, context):
-    """Send a message when the command /now is issued."""
+    """Send a message when the command /prenota is issued."""
     print(update.message.text)
     #r = requests.get('{}/totems?nomeLibro={}'.format(SERVER_URL,nome))
     msg = update.message.text.split('/prenota ')
@@ -64,11 +64,11 @@ def prenota(update, context):
 
 #TODO
 def ritira(update, context):
-    """Send a message when the command /now is issued."""
+    """Send a message when the command /ritira is issued."""
     update.message.reply_text('Not yet implemented :(')
 #TODO
 def consegna(update, context):
-    """Send a message when the command /now is issued."""
+    """Send a message when the command /consegna is issued."""
     update.message.reply_text('Not yet implemented :(')
 
 #START BOT

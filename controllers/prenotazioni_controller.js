@@ -32,7 +32,7 @@ exports.insertPrenotazione = async (req, res) => {
         id
       ]
     );
-    return { json: `Prestito inserito correttamente ${id}` };
+    return { id: id, descrizione: `Prestito inserito correttamente ${id}` };
   } catch (error) {
     throw error;
   }
