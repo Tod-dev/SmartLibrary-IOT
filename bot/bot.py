@@ -4,7 +4,7 @@ from config import BOTKEY,SERVER_URL
 import requests
 from datetime import datetime
 import json
-from setupMqtt import ClientMQTT
+#from setupMqtt import ClientMQTT
 
 #LOGGING
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -55,12 +55,15 @@ def prenota(update, context):
         d["libro"] = idLibro
         #d = json.dumps(d)
         print(d)
-        r = requests.post(url=SERVER_URL+"/prenotazioni", data=d)
-        print(r.text)
+        #r = requests.post(url=SERVER_URL+"/prenotazioni", data=d)
+        #print(r.text)
+        """
         #PUBLISH MQTT AL TOTEM CHE CONTIENE QUEL LIBRO
         mqttMessage = "IDSCOMPARTIMENTO/CODICE/IDPRENOTAZIONE"
         idTotem = 1
         mqttClient.publishMQTT(mqttMessage, idTotem)
+        print("publish fatta")
+        """
 
 #TODO
 def ritira(update, context):
@@ -90,6 +93,6 @@ def startBot():
 
 #MAIN
 if __name__ == '__main__':
+    #mqttClient = ClientMQTT()
     updater = startBot()
     updater.idle()
-    mqttClient = ClientMQTT()
