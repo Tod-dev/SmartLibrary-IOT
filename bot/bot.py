@@ -4,7 +4,7 @@ from config import BOTKEY,SERVER_URL
 import requests
 from datetime import datetime
 import json
-from setupMqtt import ClientMQTT
+#from setupMqtt import ClientMQTT
 
 #LOGGING
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -59,9 +59,6 @@ def prenota(update, context):
         print(r.text)
 
         #PUBLISH MQTT AL TOTEM CHE CONTIENE QUEL LIBRO
-        mqttMessage = "IDSCOMPARTIMENTO/CODICE/IDPRENOTAZIONE"
-        idTotem = 1
-        mqttClient.publishMQTT(mqttMessage, idTotem)
 
     
 
