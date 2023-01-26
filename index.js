@@ -14,7 +14,8 @@ dotenv.config();
 app.use(cors());
 app.use(express.json());
 
-//!PostgreSQL connection & TEST
+
+
 
 //!Route Middlewares
 app.use("/totems", routes_totems);
