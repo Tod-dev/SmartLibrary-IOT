@@ -69,10 +69,11 @@ def prenota(update, context):
         print(d)
         r = requests.post(url=SERVER_URL+"/prenotazioni", json=d)
         print(r.text)
-        # PUBLISH MQTT AL TOTEM CHE CONTIENE QUEL LIBRO
-        mqttMessage = "IDSCOMPARTIMENTO/CODICE/IDPRENOTAZIONE"
-        idTotem = 1
-        mqttClient.publishMQTT(mqttMessage, idTotem)
+        # # PUBLISH MQTT AL TOTEM CHE CONTIENE QUEL LIBRO
+        # mqttMessage = "IDSCOMPARTIMENTO/CODICE/IDPRENOTAZIONE"
+        # idTotem = 1
+        # mqttClient.publishMQTT(mqttMessage, idTotem)
+        #LA SPO
 
 # TODO
 
