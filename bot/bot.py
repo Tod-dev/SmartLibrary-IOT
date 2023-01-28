@@ -34,8 +34,10 @@ def prenota(update, context):
     msg = update.message.text.split('/prenota ')
     if len(msg) == 1:
         #ho solo la scritta /prenota
-        update.message.reply_text("Per prenotare un libro scrivi /prenota seguito dal nome del libro che desideri")
-    else:
+        return update.message.reply_text("Per prenotare un libro scrivi /prenota seguito dal nome del libro che desideri")
+        
+    try:
+
         #ho anche il nome del libro
         libro = msg[1]  #SECONDO ME BISOGNA METTERLO LOWER (msg[1].lower()) PER RENDERE PIU' FACILE LA RICERCA DEL LIBRO
         
@@ -46,24 +48,23 @@ def prenota(update, context):
             return
         
         r = json.loads(r.text)[0]
-        idLibro = r['id']
-        update.message.reply_text('Stai prenotando il libro: '+libro)
+        idLibro = r['libro_id']
 
         #CREAZIONE CODICE DI PRENOTAZIONE E DISPLAY ALL'UTENTE
         d = dict()
-        d["utente"] = 2
-        d["libro"] = idLibro
+        d["utente"] = update.message.chat.username
+        d["libro_id"] = idLibro
+        d["scompartimento_id"] = r['scompartimento_id']
+        d["totem_id"] = r['totem_id']
         #d = json.dumps(d)
         print(d)
         r = requests.post(url=SERVER_URL+"/prenotazioni", json=d)
-        print(r.text)
-        # # PUBLISH MQTT AL TOTEM CHE CONTIENE QUEL LIBRO
-        # mqttMessage = "IDSCOMPARTIMENTO/CODICE/IDPRENOTAZIONE"
-        # idTotem = 1
-        # mqttClient.publishMQTT(mqttMessage, idTotem)
-        #LA SPO
+        r = json.loads(r.text) 
 
-        #PUBLISH MQTT AL TOTEM CHE CONTIENE QUEL LIBRO
+        update.message.reply_text(r["descrizione"], parse_mode='HTML')
+    except Exception as e:
+        print("ERRORE: {}".format(e))
+        update.message.reply_text("Errore nel reperimento del libro")
 
     
 

@@ -54,7 +54,7 @@ exports.getTotemsFromBook = async (req, res) => {
 
     const { rows } = await db.query(
       `
-      select distinct totems.*,libri.*
+      select distinct totems.id as totem_id, libri.scompartimento_id, libri.id as libro_id
       from libri
       join scompartimenti on (libri.scompartimento_id = scompartimenti.id)
       join totems on (totems.id = scompartimenti.totem_id)

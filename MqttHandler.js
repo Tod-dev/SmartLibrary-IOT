@@ -30,7 +30,7 @@ class MqttHandler {
     });
 
     // mqtt subscriptions
-    this.mqttClient.subscribe('mytopic', {qos: 0});
+    this.mqttClient.subscribe('TOTEMS/*', {qos: 0});
 
     // When a message arrives, console.log it
     this.mqttClient.on('message', function (topic, message) {
@@ -43,8 +43,8 @@ class MqttHandler {
   }
 
   // Sends a mqtt message to topic: mytopic
-  sendMessage(message) {
-    this.mqttClient.publish('mytopic', message);
+  sendMessage(topic,message) {
+    this.mqttClient.publish('TOTEMS/'+topic, message);
   }
 }
 
@@ -58,6 +58,6 @@ module.exports.getMqttConnection = () => {
 }
 
 
-module.exports.sendMessage =  async (message) => {
-  mqttConnection.sendMessage(message);
+module.exports.sendMessage =  async (topic,message) => {
+  mqttConnection.sendMessage(topic,message);
 }

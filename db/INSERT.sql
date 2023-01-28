@@ -6,11 +6,12 @@ insert into generi values
 
 insert into autori values(1, 'Emily Bronte'), (2, 'Harper Lee'), (3, 'Niccolò Ammaniti'), (4, 'Tiziano Sclavi');
 	
-insert into totems values  (1, 'qr-1', 0,0), (2, 'qr-2', 0,0);
+insert into totems values  (1, 'qr-1', 'https://goo.gl/maps/ismPzxi1eAWPbTan7','Biblioteca Panizzi, Via Luigi Carlo Farini, Reggio Emilia, RE'), 
+(2, 'qr-2','https://goo.gl/maps/P66FdLfTZEAy2Bzr8' ,'Unimore - V.le Timavo, Viale Timavo, Reggio Emilia, RE');
 
 insert into scompartimenti values (1, 1),(2, 1),(3, 2),(4, 2);
 
-insert into utenti values (1, 'Michael', 'iotLibrary'), (2, 'Marco', 'iotLibrary'), (3, 'Matteo', 'iotLibrary');
+insert into utenti values (1, 'michaelbianco', 'iotLibrary'), (2, 'marc0todar0', 'iotLibrary'), (3, 'matteberto99', 'iotLibrary');
 
 insert into libri values 
 	(1,'Dylan Dog - I Nuovi Barbari', 2, 4, 1),

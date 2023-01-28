@@ -11,8 +11,8 @@ create table autori(
 create table totems(
 	id int not null primary key,
 	qr_code_link varchar(255),
-	latitude decimal(15,10),
-	longitude decimal(15,10)
+	maps_link varchar(500),
+		 varchar (300)
 );
 
 create table scompartimenti(
