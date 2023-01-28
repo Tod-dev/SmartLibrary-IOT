@@ -1,11 +1,13 @@
 #include <MFRC522.h>
-#define SS_PIN 53
-#define RST_PIN 5
-MFRC522 mfrc522(SS_PIN, RST_PIN);
+#include <SPI.h>
+#define SDA_PIN 10
+#define RST_PIN 9
+MFRC522 nfcReader(SDA_PIN, RST_PIN);
 
-const int ledPins[] = {4,6,8};
+const int ledPins[] = {3,5,7};
 const int shelfIds[] = {111,222,333};
-const int totPin = 3;
+const int totLeds = 3;
+//const int buzzerPin = 3;
 int curstate;
 int shelf;
 int code;
@@ -20,7 +22,7 @@ int readNFC()
   unsigned long timer = millis();
   while(millis()-timer<5000)
   {
-    if (mfrc522.PICC_IsNewCardPresent()) return 0;
+    if (nfcReader.PICC_IsNewCardPresent()) return 0;
     //if ( ! mfrc522.PICC_ReadCardSerial()) return 0;
   }
   return -1;
@@ -52,7 +54,7 @@ void switchOnGreenShelfLed(int ledPin)
 
 int findIdArr()
 {
-  for (int i = 0; i < totPin; i++)
+  for (int i = 0; i < totLeds; i++)
   {
     if (shelfIds[i]==shelf) return i;
   }
@@ -96,9 +98,11 @@ void performInActions()
   
 void setup()
 {
-  mfrc522.PCD_Init();
+  nfcReader.PCD_Init();
+  SPI.begin();
   Serial.begin(9600);
-  for (int i = 0; i < totPin; i++)
+  //pinMode(buzzerPin, OUTPUT);
+  for (int i = 0; i < totLeds; i++)
   {
     pinMode(ledPins[i], OUTPUT);
     pinMode(ledPins[i]+1, OUTPUT);
@@ -109,15 +113,18 @@ void setup()
   shelf = -1;
   code = -1;
   curstate = -1;
+  //digitalWrite(buzzerPin, LOW);
 }
 
 void loop()
-{ 
+{
   if (Serial.available()>0)
   {
     //read input 
     int val;
     val = Serial.read();
+    Serial.println(curstate);
+    Serial.println(val);
   
     //future state (default fstate = curstate)
     int fstate;
