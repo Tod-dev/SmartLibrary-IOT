@@ -3,6 +3,9 @@ GET localhost:5000/totems/IDTOTEM
 
 GET localhost:5000/totems?nomeLibro=NOMELIBRO 
     ritorna i totem che contengono quel libro 
+
+GET localhost:5000/totems?query=liberi
+    ritorna i totem con almeno uno scompartimento libero
     
 POST localhost:5000/prenotazioni 
     Inserisce una nuova prenotazione di un libro su un totem (parametri nel body) 

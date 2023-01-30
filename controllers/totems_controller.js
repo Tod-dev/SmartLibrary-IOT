@@ -13,9 +13,10 @@ exports.getTotemData = async (req, res) => {
 
     const { rows: totem } = await db.query(
       `
-        select totems.*
-        from totems
-        where totems.id = $1
+        select t.id as totem_id, t.indirizzo as indirizzo, s.id as num_scompartimento, l.nome as libro
+        from libri l join scompartimenti s on (l.scompartimento_id = s.id)
+        join totems t on (s.totem_id = t.id)
+        where t.id = $1
         `,
       [id]
     );
@@ -36,6 +37,34 @@ exports.getTotemData = async (req, res) => {
     };
 
     return res;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/*
+  getTotemsFree 
+  params: [query]
+  ritorna i totem con almeno uno scompartimento libero
+*/
+exports.getTotemsFree = async (req, res) => {
+  try {
+
+    console.log("getTotemsFree - query received");
+
+    const { rows } = await db.query(
+
+      `select distinct t.id as totem_id, t.indirizzo as indirizzo, t.maps_link
+      from scompartimenti s left join libri l on (l.scompartimento_id = s.id)
+      join totems t on (s.totem_id = t.id)
+      where
+      l.id in(
+      select distinct p.libro_id
+      from prestiti p 
+      where p.data_fine_prestito is null and p.data_inizio_prestito is not null) or l.id is null `,
+      []
+    );
+    return rows;
   } catch (error) {
     throw error;
   }

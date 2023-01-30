@@ -69,8 +69,24 @@ def prenota(update, context):
 #TODO
 def consegna(update, context):
     """Send a message when the command /now is issued."""
-    update.message.reply_text('Not yet implemented :(')
+    print(update.message.text)
     #RITORNARE LA LISTA DI TOTEM CON ALMENO UNO SCOMPARTIMENTO LIBERO
+    try:
+        r = requests.get('{}/totems?query=liberi'.format(SERVER_URL))
+        print(r.text)
+        if r.text == '[]':
+            update.message.reply_text('Spiacenti, ma non ci sono totem liberi al momento')
+            return
+        
+        r = json.loads(r.text)
+        #print(r)
+        descrizione = 'Ecco l\'elenco dei totem liberi, puoi recarti a quello più vicino per consegnare il tuo libro\n'
+        for totem in r:
+            descrizione += 'Totem {}, {}, {}\n'.format(totem['totem_id'], totem['indirizzo'], totem['maps_link'])
+        update.message.reply_text(descrizione, parse_mode='HTML')
+    except Exception as e:
+        print("ERRORE: {}".format(e))
+        update.message.reply_text("Errore nella lettura dei totem liberi")
 
 #START BOT
 def startBot():
