@@ -1,79 +1,150 @@
 <html>
-<head>
-<title>SMART LIBRARY</title>
-<style>
-body{
-	width: 100%;
-    height: 100%;
-	background-color: lightblue;
-}
-button{
-	background-color: lightgreen;
-}
-table{
-    
-	border-style: double;
-	background-color: white;
-}
-caption{
-	font-weight: bold;
-}
-.main{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-</style>
-<script>
-    async function azione(stato){
-        var x1 = document.totem.idprenotazione.value;
-        //CONTROLLARE DATI
-        //alert(x1);
-        
-        url = "https://dead-teal-tiara.cyclic.app/PRENOTAZIONI/"+x1;
+  <head>
+    <title>SMART LIBRARY</title>
+    <style> 
+      table {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-style: double;
+        width: 30vw;
+      }
+      caption {
+        font-weight: bold;
+      }
+      .main {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin-top: 15vw;
+      }
+      #idprenotazione{
+        width: 40vw;
+        margin-bottom: 2vw;
+      }
+      .buttonContainer{
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        margin-bottom: 2vw;
+      }
+
+      .bottone {
+
+        border-radius: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 3em;
+        width: 8em;
+        font-size: large;
+        font-weight: 600;
+        cursor: pointer;
+
+        }
+        .verde{
+            color: #1cc49d;
+            background-color: #1b2f31;
+        }
+        .blue{
+            color: #00529B;
+            background-color: #2ea7b2;
+        }
+        body{
+			font-family: Arial, Helvetica, sans-serif;
+			font-size: 13px;
+		}
+		.info, .success, .warning, .error, .validation {
+			border: 1px solid;
+			margin: 10px 0px;
+			padding: 15px 10px 15px 50px;
+			background-repeat: no-repeat;
+			background-position: 10px center;
+            cursor: pointer;
+		}
+        .success {
+			color: #4F8A10;
+			background-color: #DFF2BF;
+			background-image: url('https://i.imgur.com/Q9BGTuy.png');
+            visibility:hidden;
+		}
+		.warning {
+			color: #9F6000;
+			background-color: #FEEFB3;
+			background-image: url('https://i.imgur.com/Z8q7ww7.png');
+		}
+		.error{
+			color: #D8000C;
+			background-color: #FFBABA;
+			background-image: url('https://i.imgur.com/GnyDvKN.png');
+            visibility:hidden;
+		}
+        .info {
+			color: #00529B;
+			background-color: #BDE5F8;
+			background-image: url('https://i.imgur.com/ilgqWuX.png');
+		}
+    </style>
+    <script>
+      async function azione(stato) {
+        document.getElementById("ok").style.visibility = 'hidden';
+        document.getElementById("error").style.visibility = 'hidden'
+        var idprenotazione = document.getElementById("idprenotazione").value;
+        console.log("START "+stato +", idprenotazione:"+ idprenotazione)
+
+        if(!idprenotazione){
+            document.getElementById("error").style.visibility = 'visible';
+            document.getElementById("error").innerHTML = "Errore, prenotazione non presente";
+            return;
+        }
+
+        url = "https://dead-teal-tiara.cyclic.app/PRENOTAZIONI/" + idprenotazione;
         const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-        'Content-Type': 'application/json'
-        // 'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: JSON.stringify({stato: stato})});
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ stato: stato }),
+        });
         const r = await response.json();
         console.log(r);
-        return false;
-    }
+        if(response.ok){
+            document.getElementById("ok").style.visibility = 'visible';
+            document.getElementById("ok").innerHTML = r.json;
+        }else{
+            document.getElementById("error").style.visibility = 'visible';
+            document.getElementById("error").innerHTML = "Errore nell'inserimento della prenotazione "+ idprenotazione;
+        }
+      }
+ 
+      function rimuovi(tipoMessaggio){
+        if(tipoMessaggio ==="ok"){
+            document.getElementById("ok").style.visibility = 'hidden'
+        }else{
+            document.getElementById("error").style.visibility = 'hidden'
+        }
+      }
+    </script>
+  </head>
 
+  <body>
+    <div class="main">
+      <h1>TOTEM 1</h1>
+      <input type="text" name="idprenotazione" id="idprenotazione" placeholder="codice prenotazione" />
 
-	
-</script>
-</head>
+      <div class="buttonContainer">
+        <button type="button" name="preleva" onclick="azione('prelevato')" class="bottone verde">
+          RITIRA
+        </button>
+        <button type="button" name="consegna" onclick="azione('consegnato')" class="bottone blue">
+          CONSEGNA
+        </button>
+      </div>
 
-<body>
-<div class="main">
-
-<form name="totem" action="totem.html" method="get">
-<table>
-
-<tr>
-	<caption>TOTEM 1</caption>
-</tr>
-<tr>
-    <td>
-        <input type="text" name="idprenotazione">
-    </td>
-</tr>
-<tr>
-	<td>
-
-		<button type="button" name="invia" onclick="azione('prelevato')">RITIRA
-        <button type="button" name="invia" onclick="azione('consegnato')">CONSEGNA
-	</td>
-</tr>
-
-
-</table>
-</form>
-</div>
-</body>
+      <p id="ok" class="success" onclick="rimuovi('ok')"></p>
+      <p id="error" class="error" onclick="rimuovi('error')"></p>
+    </div>
+  </body>
 </html>
