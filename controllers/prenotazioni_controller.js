@@ -62,7 +62,8 @@ exports.insertPrenotazione = async (req, res) => {
     );
     /* SEND MQTT MESSAGE */
     //IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE
-    MqttHandler.sendMessage(totem_id,`${scompartimento_id}/1/${id_prenotazione}`)
+    const codice = 1;
+    MqttHandler.sendMessage(totem_id,`${scompartimento_id}/${codice}/${id_prenotazione}`)
 
     return { id: id_prenotazione, descrizione: `Prestito inserito correttamente, PRENOTAZIONE NUMERO: <b>${id_prenotazione}</b>\n${indirizzo}\n${maps_link}` };
   } catch (error) {
@@ -104,7 +105,7 @@ exports.updatePrenotazione = async (req, res) => {
       [id_prenotazione]
     )
     if (dati_prenotazione.length == 0){
-      throw { error: "username non esistente" };
+      throw { error: "dati_prenotazione non esistenti" };
     }
     const scompartimento_id = dati_prenotazione[0]["scompartimento_id"];
     const totem_id = dati_prenotazione[0]["totem_id"];
@@ -121,7 +122,17 @@ exports.updatePrenotazione = async (req, res) => {
     );
     /* SEND MQTT MESSAGE */
     //IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE
-    MqttHandler.sendMessage(totem_id,`${scompartimento_id}/1/${id_prenotazione}`)
+    let codice;
+    if (stato === 'consegnato'){
+      codice = 3;
+    }
+    else if (stato === 'prelevato'){
+      codice = 2;
+    }
+    else{
+      throw { error: "STATO NON VALIDO" };
+    }
+    MqttHandler.sendMessage(totem_id,`${scompartimento_id}/${codice}/${id_prenotazione}`)
     return { json: `Prestito ${id_prenotazione} aggiornato allo stato ${stato} correttamente` };
   } catch (error) {
     throw error;
