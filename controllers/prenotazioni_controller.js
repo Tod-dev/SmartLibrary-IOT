@@ -81,7 +81,7 @@ exports.insertPrenotazione = async (req, res) => {
 */
 exports.updatePrenotazione = async (req, res) => {
   try {
-    const id = req.params.id;
+    const id_prenotazione = req.params.id;
     const body = req.body;
     console.log(body);
     const stato = body["stato"];
@@ -94,17 +94,35 @@ exports.updatePrenotazione = async (req, res) => {
       throw { error: "stato is wrong: value must be in (prenotato, prelevato, consegnato) " };
     }
 
+    const {rows: dati_prenotazione} = await db.query(`
+      select scompartimenti.id as scompartimento_id, totems.id as totem_id
+      from prestiti
+      join libri on (libri.id = prestiti.libro_id)
+      join scompartimenti on (libri.scompartimento_id = scompartimenti.id)
+      join totems on (scompartimenti.totem_id = totems.id)
+      where prestiti.id = $1`,
+      [id_prenotazione]
+    )
+    if (dati_prenotazione.length == 0){
+      throw { error: "username non esistente" };
+    }
+    const scompartimento_id = dati_prenotazione[0]["scompartimento_id"];
+    const totem_id = dati_prenotazione[0]["totem_id"];
+
     await db.query(
     `update prestiti 
     set stato = $2, 
     data_fine_prestito = ${stato === 'consegnato' ? 'now()' : 'NULL'}
     where id = $1 `,
       [
-        id,
+        id_prenotazione,
         stato
       ]
     );
-    return { json: `Prestito ${id} aggiornato allo stato ${stato} correttamente` };
+    /* SEND MQTT MESSAGE */
+    //IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE
+    MqttHandler.sendMessage(totem_id,`${scompartimento_id}/1/${id_prenotazione}`)
+    return { json: `Prestito ${id_prenotazione} aggiornato allo stato ${stato} correttamente` };
   } catch (error) {
     throw error;
   }
