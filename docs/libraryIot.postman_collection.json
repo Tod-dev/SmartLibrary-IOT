@@ -64,7 +64,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"libro\": 1,\n    \"utente\": 2\n}",
+					"raw": "{\n    \"utente\": \"marc0todar0\",\n    \"libro_id\": 1,\n    \"scompartimento_id\": 1,\n    \"totem_id\": 1\n}",
 					"options": {
 						"raw": {
 							"language": "json"
