@@ -1,0 +1,79 @@
+<html>
+<head>
+<title>SMART LIBRARY</title>
+<style>
+body{
+	width: 100%;
+    height: 100%;
+	background-color: lightblue;
+}
+button{
+	background-color: lightgreen;
+}
+table{
+    
+	border-style: double;
+	background-color: white;
+}
+caption{
+	font-weight: bold;
+}
+.main{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+</style>
+<script>
+    async function azione(stato){
+        var x1 = document.totem.idprenotazione.value;
+        //CONTROLLARE DATI
+        //alert(x1);
+        
+        url = "https://dead-teal-tiara.cyclic.app/PRENOTAZIONI/"+x1;
+        const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+        'Content-Type': 'application/json'
+        // 'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: JSON.stringify({stato: stato})});
+        const r = await response.json();
+        console.log(r);
+        return false;
+    }
+
+
+	
+</script>
+</head>
+
+<body>
+<div class="main">
+
+<form name="totem" action="totem.html" method="get">
+<table>
+
+<tr>
+	<caption>TOTEM 1</caption>
+</tr>
+<tr>
+    <td>
+        <input type="text" name="idprenotazione">
+    </td>
+</tr>
+<tr>
+	<td>
+
+		<button type="button" name="invia" onclick="azione('prelevato')">RITIRA
+        <button type="button" name="invia" onclick="azione('consegnato')">CONSEGNA
+	</td>
+</tr>
+
+
+</table>
+</form>
+</div>
+</body>
+</html>

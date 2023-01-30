@@ -53,13 +53,20 @@ exports.getTotemsFromBook = async (req, res) => {
     console.log("getTotemsFromBook - bookname received :", bookname);
 
     const { rows } = await db.query(
-      `
+      /*`
       select distinct totems.id as totem_id, libri.scompartimento_id, libri.id as libro_id
       from libri
       join scompartimenti on (libri.scompartimento_id = scompartimenti.id)
       join totems on (totems.id = scompartimenti.totem_id)
       where libri.nome like concat('%','${bookname}','%')
-      `,
+      `,*/
+      `select distinct t.id as totem_id, l.scompartimento_id, l.id as libro_id
+       from libri l join scompartimenti s on (l.scompartimento_id = s.id)
+       join totems t on (s.totem_id = t.id)
+       where l.nome like concat('%','${bookname}','%') and l.id not in(
+       select distinct p.libro_id
+       from prestiti p 
+       where p.data_fine_prestito is null)`,
       []
     );
     return rows;

@@ -12,7 +12,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 def getOperations():
-    return ['prenota','ritira','consegna']
+    return ['prenota','consegna']
 
 #COMANDI
 def start(update, context):
@@ -66,16 +66,11 @@ def prenota(update, context):
         print("ERRORE: {}".format(e))
         update.message.reply_text("Errore nel reperimento del libro")
 
-    
-
-#TODO
-def ritira(update, context):
-    """Send a message when the command /now is issued."""
-    update.message.reply_text('Not yet implemented :(')
 #TODO
 def consegna(update, context):
     """Send a message when the command /now is issued."""
     update.message.reply_text('Not yet implemented :(')
+    #RITORNARE LA LISTA DI TOTEM CON ALMENO UNO SCOMPARTIMENTO LIBERO
 
 #START BOT
 def startBot():
@@ -88,7 +83,6 @@ def startBot():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("prenota", prenota))
-    dp.add_handler(CommandHandler("ritira", ritira))
     dp.add_handler(CommandHandler("consegna", consegna))
     
     updater.start_polling()
