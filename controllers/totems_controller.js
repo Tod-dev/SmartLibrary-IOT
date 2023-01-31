@@ -11,7 +11,7 @@ exports.getTotemData = async (req, res) => {
     const id = req.params.id;
     console.log("getTotemData - id totem received :", id);
 
-    const { rows: totem } = await db.query(
+    /*const { rows: totem } = await db.query(
       `
         select t.id as totem_id, t.indirizzo as indirizzo, s.id as num_scompartimento, l.nome as libro
         from libri l join scompartimenti s on (l.scompartimento_id = s.id)
@@ -34,9 +34,19 @@ exports.getTotemData = async (req, res) => {
     const res = {
       totem: totem,
       libri: libri
-    };
+    };*/
+    const { rows: totem } = await db.query(
+      `
+        select t.*, s.id as scompartimento_id, s.stato as stato_scompartimento, l.nome as nome_libro
+        from scompartimenti s join totems t on (s.totem_id = t.id) left join libri l on (l.scompartimento_id = s.id)
+        where t.id = $1
+        order by scompartimento_id asc
+        `,
+      [id]
+    );
+    
 
-    return res;
+    return totem;
   } catch (error) {
     throw error;
   }
@@ -86,7 +96,7 @@ exports.getTotemsFromBook = async (req, res) => {
 
     const { rows } = await db.query(
 
-      `select distinct t.id as totem_id, l.scompartimento_id, l.id as libro_id
+      /*`select distinct t.id as totem_id, l.scompartimento_id, l.id as libro_id
       from libri l join scompartimenti s on (l.scompartimento_id = s.id)
       join totems t on (s.totem_id = t.id)
       where
@@ -94,7 +104,13 @@ exports.getTotemsFromBook = async (req, res) => {
       select distinct p.libro_id
       from prestiti p 
       where p.data_fine_prestito is null)
-      and LOWER(l.nome) like LOWER(concat('%','${bookname}','%')) `,
+      and LOWER(l.nome) like LOWER(concat('%','${bookname}','%')) `,*/
+      `select distinct t.id as totem_id, l.scompartimento_id, l.id as libro_id
+       from libri l join scompartimenti s on (l.scompartimento_id = s.id) 
+       join totems t on (t.id = s.totem_id)
+       where LOWER(l.nome) like LOWER(concat('%','${bookname}','%')) and 
+          l.scompartimento_id is not null and 
+          s.stato = 'occupato'`,
       []
     );
     return rows;

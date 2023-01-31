@@ -237,7 +237,12 @@ exports.updatePrenotazione = async (req, res) => {
     else{
       throw { error: "STATO NON VALIDO" };
     }
-    MqttHandler.sendMessage(totem_id,`${scompartimento_id}/${codice}/${id_prenotazione}`)
+    MqttHandler.sendMessage(totem_id,`${scompartimento_id}/${codice}/${id_prenotazione}`);
+
+    if (stato == 'in consegna'){
+      return { json: `Prestito ${id_prenotazione} aggiornato allo stato ${stato} correttamente, numero scompartimento: ${scompartimento_id}` };
+    }
+
     return { json: `Prestito ${id_prenotazione} aggiornato allo stato ${stato} correttamente` };
   } catch (error) {
     throw error;

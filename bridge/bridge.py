@@ -40,7 +40,6 @@ class Bridge():
 	def setupTotem(self):
 		self.id = self.config.get("TOTEM","ID")
 		self.topic = "TOTEMS/" + self.id
-		#self.topic_update = "TOTEMS/UPDATE/" + self.id
 		self.elenco_prenotazioni = dict()
 
 	def setupSerial(self):
@@ -89,8 +88,6 @@ class Bridge():
 
 	def setupHTTP(self):
 		self.APIURL = self.config.get("SERVER", "URL")
-		#self.APIKEY = "aio_sTtf00jBu12ileE6HCoBl23KZ7MK"
-		#self.HEADERS = {"X-AIO-Key": self.APIKEY}
 
 	def on_connect(self, client, userdata, flags, rc, properties=None):
 		print("Connected with result code " + str(rc))
@@ -98,7 +95,6 @@ class Bridge():
 		# Subscribing in on_connect() means that if we lose the connection and
 		# reconnect then subscriptions will be renewed.
 		self.clientMQTT.subscribe(self.topic)
-		#self.clientMQTT.subscribe(self.topic_update)
 
 
 	# The callback for when a PUBLISH message is received from the server.
@@ -119,25 +115,12 @@ class Bridge():
 			if codice == NUM_SCOMPARTIMENTO:
 				self.elenco_prenotazioni[idscompartimento] = idprenotazione
 				self.httpRequest(idprenotazione, idscompartimento, 'consegnato')
-		"""
-		if msg.topic == self.topic_update:
-			msg = msg.split('/')
-			n_scompartimenti = int(msg[0])
-			msg.pop(0)
-			scompartimenti = dict()
-			num = 0
-			i = 0
-			while i < n_scompartimenti:
-				scompartimenti[int(msg[num])] = int(msg[num+1])
-				i+=1
-				num+=2
-			self.outSerialeUpdate(n_scompartimenti, scompartimenti)
-		"""
+		
 	def outSeriale(self, idscompartimento, codice):
 		"""
 		PACCHETTO
 		---------
-		FF|num_scompartimenti|id_scomp1|stato1|...|FE
+		FF|idscompartimento|codice|FE
 		"""
 		idscompartimento = idscompartimento.to_bytes(2, 'little')
 		codice = codice.to_bytes(1, 'little')
@@ -149,25 +132,21 @@ class Bridge():
 		pacchetto.append(b'\xfe')
 		print("BRIDGE -> ARDUINO")
 		print(pacchetto)
-		#self.ser.write(pacchetto)
+		self.ser.write(pacchetto)
 	
-	def outSerialeUpdate(self, n_scompartimenti, scompartimenti):
+	def outSerialeUpdate(self, stato_scompartimenti):
 		"""
 		PACCHETTO
 		---------
-		FF|idscomp1|idscomp2|codice|FE
+		FF|statoScomp1|statoScomp2|...|FE
 		"""
-		n_scompartimenti = n_scompartimenti.to_bytes(1, 'little')
 		pacchetto = list()
 		pacchetto.append(b'\xff')
-		pacchetto.append(n_scompartimenti)
-		for num, stato in scompartimenti.items():
-			num = num.to_bytes(2, 'little')
-			pacchetto.append(num[0].to_bytes(1, 'little'))
-			pacchetto.append(num[1].to_bytes(1, 'little'))
+		for stato in stato_scompartimenti:
 			pacchetto.append(stato.to_bytes(1, 'little'))
 		pacchetto.append(b'\xfe')
-		#print(pacchetto)
+		print("BRIDGE -> ARDUINO")
+		print(pacchetto)
 		self.ser.write(pacchetto)
 
 	def loop(self):
@@ -214,27 +193,33 @@ class Bridge():
 				del self.elenco_prenotazioni[idscompartimento]
 			else:
 				print("Codice prenotazione non trovato!")
-		#self.clientMQTT.publish('MYsensor/{:d}'.format(i),'{:d}'.format(val))
-		#self.httpRequest(strval)
 
 	#COMUNICAZIONE BRIDGE->SERVER
 	def httpRequest(self, idprenotazione, idscompartimento, codice):
 		d = {'totem_id': self.id, 'scompartimento_id': idscompartimento, 'stato': codice}
-		#d = json.dumps(d, indent=4)
 		url = "{}/prenotazioni/{}".format(self.APIURL, idprenotazione)
 		print(url)
 		r = requests.put(url = url, json = d)
-		#r = requests.put(url = self.APIURL+idprenotazione, data = d, headers=self.HEADERS)
 		print(r.text)
 	
 	def httpRequestUpdate(self):
 		url = "{}/totems/{}".format(self.APIURL, self.id)
 		r = requests.get(url = url)
-		#r = requests.put(url = self.APIURL+idprenotazione, data = d, headers=self.HEADERS)
 		print(r.text)
+		r = json.loads(r.text)
+		scompartimenti = list()
+		for totem in r:
+			scompartimenti.append(totem['stato_scompartimento'])
 
+		for i, s in enumerate(scompartimenti):
+			if s == 'occupato':
+				scompartimenti[i] = 1
+			if s == 'prenotato':
+				scompartimenti[i] = 2
+			if s == 'libero':
+				scompartimenti[i] = 3
 
-
+		self.outSerialeUpdate(scompartimenti)
 
 if __name__ == '__main__':
 	br=Bridge()
