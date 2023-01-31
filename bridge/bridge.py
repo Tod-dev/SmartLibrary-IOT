@@ -19,6 +19,7 @@ import ssl
 #INTERO
 LIBRO_RITIRATO = 1
 LIBRO_RICONSEGNATO = 2
+RICHIESTA_UPDATE = 3
 
 #CODICE
 LIBRO_PRENOTATO = 1
@@ -33,12 +34,13 @@ class Bridge():
 		self.config.read(self.config_path)
 		self.setupTotem()
 		self.setupSerial()
-		#self.setupHTTP()
+		self.setupHTTP()
 		self.setupMQTT()
     
 	def setupTotem(self):
 		self.id = self.config.get("TOTEM","ID")
 		self.topic = "TOTEMS/" + self.id
+		#self.topic_update = "TOTEMS/UPDATE/" + self.id
 		self.elenco_prenotazioni = dict()
 
 	def setupSerial(self):
@@ -72,18 +74,19 @@ class Bridge():
 
 	def setupMQTT(self):
 		self.clientMQTT = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv5)
-		MQTT_USER = self.config.get("MQTT", "BrokerUsername")
-		MQTT_PWD = self.config.get("MQTT", "BrokerPassword")
+		MQTT_USER = self.config.get("MQTT", "MQTT_USERNAME")
+		MQTT_PWD = self.config.get("MQTT", "MQTT_PASSWORD")
 		self.clientMQTT.username_pw_set(MQTT_USER, MQTT_PWD)
 		self.clientMQTT.tls_set(tls_version=ssl.PROTOCOL_TLS, cert_reqs=ssl.CERT_NONE)
 		self.clientMQTT.on_connect = self.on_connect
 		self.clientMQTT.on_message = self.on_message
 		print("connecting to MQTT broker...")
 		self.clientMQTT.connect(
-			self.config.get("MQTT","Server"),
+			self.config.get("MQTT","MQTT_BROKER"),
 			self.config.getint("MQTT","Port"),
 			60)
 		self.clientMQTT.loop_start()
+
 	def setupHTTP(self):
 		self.APIURL = self.config.get("SERVER", "URL")
 		#self.APIKEY = "aio_sTtf00jBu12ileE6HCoBl23KZ7MK"
@@ -95,30 +98,46 @@ class Bridge():
 		# Subscribing in on_connect() means that if we lose the connection and
 		# reconnect then subscriptions will be renewed.
 		self.clientMQTT.subscribe(self.topic)
+		#self.clientMQTT.subscribe(self.topic_update)
 
 
 	# The callback for when a PUBLISH message is received from the server.
 	# COMUNICAZIONE SERVER->BRIDGE->ARDUINO
 	def on_message(self, client, userdata, msg):
 		print(msg.topic + " " + str(msg.payload))
-		"""
-		if msg.topic==self.topic:
+
+		if msg.topic == self.topic:
 			#gestisci il messaggio e scrivi sulla seriale
 			#In msg c'è IDScompartimento/CODICE/IDPRENOTAZIONE
+			msg = msg.payload.decode('utf-8')
 			msg = msg.split('/')
-			idscompartimento = msg[0]
-			codice = msg[1]
-			idprenotazione = msg[2]
+			idscompartimento = int(msg[0])
+			codice = int(msg[1])
+			idprenotazione = int(msg[2])
 			self.outSeriale(idscompartimento, codice)
 
-			if codice == LIBRO_PRONTO_PER_RITIRO or codice == NUM_SCOMPARTIMENTO:
+			if codice == NUM_SCOMPARTIMENTO:
 				self.elenco_prenotazioni[idscompartimento] = idprenotazione
+				self.httpRequest(idprenotazione, idscompartimento, 'consegnato')
+		"""
+		if msg.topic == self.topic_update:
+			msg = msg.split('/')
+			n_scompartimenti = int(msg[0])
+			msg.pop(0)
+			scompartimenti = dict()
+			num = 0
+			i = 0
+			while i < n_scompartimenti:
+				scompartimenti[int(msg[num])] = int(msg[num+1])
+				i+=1
+				num+=2
+			self.outSerialeUpdate(n_scompartimenti, scompartimenti)
 		"""
 	def outSeriale(self, idscompartimento, codice):
 		"""
 		PACCHETTO
 		---------
-		FF|idscomp1|idscomp2|codice|FE
+		FF|num_scompartimenti|id_scomp1|stato1|...|FE
 		"""
 		idscompartimento = idscompartimento.to_bytes(2, 'little')
 		codice = codice.to_bytes(1, 'little')
@@ -127,6 +146,26 @@ class Bridge():
 		pacchetto.append(idscompartimento[0].to_bytes(1, 'little'))
 		pacchetto.append(idscompartimento[1].to_bytes(1, 'little'))
 		pacchetto.append(codice)
+		pacchetto.append(b'\xfe')
+		print("BRIDGE -> ARDUINO")
+		print(pacchetto)
+		#self.ser.write(pacchetto)
+	
+	def outSerialeUpdate(self, n_scompartimenti, scompartimenti):
+		"""
+		PACCHETTO
+		---------
+		FF|idscomp1|idscomp2|codice|FE
+		"""
+		n_scompartimenti = n_scompartimenti.to_bytes(1, 'little')
+		pacchetto = list()
+		pacchetto.append(b'\xff')
+		pacchetto.append(n_scompartimenti)
+		for num, stato in scompartimenti.items():
+			num = num.to_bytes(2, 'little')
+			pacchetto.append(num[0].to_bytes(1, 'little'))
+			pacchetto.append(num[1].to_bytes(1, 'little'))
+			pacchetto.append(stato.to_bytes(1, 'little'))
 		pacchetto.append(b'\xfe')
 		#print(pacchetto)
 		self.ser.write(pacchetto)
@@ -161,15 +200,16 @@ class Bridge():
 		idscompartimento += (int.from_bytes(self.inbuffer[2], byteorder='little') << 8)
 		intero = int.from_bytes(self.inbuffer[3], byteorder='little')
 
-		if intero == LIBRO_RITIRATO or intero == LIBRO_RICONSEGNATO:
+		if idscompartimento == 0 and intero == RICHIESTA_UPDATE:
+			#UPDATE RICHIESTO DALL'ARDUINO
+			self.httpRequestUpdate()
+
+		if intero == LIBRO_RICONSEGNATO:
 			#risali al codice prenotazione associato e conferma al server il ritiro
 			if idscompartimento in self.elenco_prenotazioni:
 				idprenotazione = self.elenco_prenotazioni[idscompartimento]
 
-				if intero == LIBRO_RITIRATO:
-					self.httpRequest(idprenotazione, idscompartimento, 'ritirato')
-				else:
-					self.httpRequest(idprenotazione, idscompartimento, 'riconsegnato')
+				self.httpRequest(idprenotazione, idscompartimento, 'consegnato')
 
 				del self.elenco_prenotazioni[idscompartimento]
 			else:
@@ -179,9 +219,17 @@ class Bridge():
 
 	#COMUNICAZIONE BRIDGE->SERVER
 	def httpRequest(self, idprenotazione, idscompartimento, codice):
-		d = {'totemID': self.id, 'codicePrenotazione': idprenotazione, 'idScompartimento': idscompartimento, 'codice': codice}
-		d = json.dumps(d, indent=4)
-		r = requests.put(url = self.APIURL+idprenotazione, data = d)
+		d = {'totem_id': self.id, 'scompartimento_id': idscompartimento, 'stato': codice}
+		#d = json.dumps(d, indent=4)
+		url = "{}/prenotazioni/{}".format(self.APIURL, idprenotazione)
+		print(url)
+		r = requests.put(url = url, json = d)
+		#r = requests.put(url = self.APIURL+idprenotazione, data = d, headers=self.HEADERS)
+		print(r.text)
+	
+	def httpRequestUpdate(self):
+		url = "{}/totems/{}".format(self.APIURL, self.id)
+		r = requests.get(url = url)
 		#r = requests.put(url = self.APIURL+idprenotazione, data = d, headers=self.HEADERS)
 		print(r.text)
 

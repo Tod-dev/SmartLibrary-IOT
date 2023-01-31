@@ -54,14 +54,17 @@ exports.getTotemsFree = async (req, res) => {
 
     const { rows } = await db.query(
 
-      `select distinct t.id as totem_id, t.indirizzo as indirizzo, t.maps_link
+      /*`select distinct t.id as totem_id, t.indirizzo as indirizzo, t.maps_link
       from scompartimenti s left join libri l on (l.scompartimento_id = s.id)
       join totems t on (s.totem_id = t.id)
       where
       l.id in(
       select distinct p.libro_id
       from prestiti p 
-      where p.data_fine_prestito is null and p.data_inizio_prestito is not null) or l.id is null `,
+      where p.data_fine_prestito is null and p.data_inizio_prestito is not null) or l.id is null `,*/
+      `select distinct t.id as totem_id, t.indirizzo as indirizzo, t.maps_link
+       from scompartimenti s join totems t on (s.totem_id = t.id)
+       where s.stato = 'libero'`,
       []
     );
     return rows;

@@ -90,9 +90,10 @@
     <script>
       async function azione(stato) {
         document.getElementById("ok").style.visibility = 'hidden';
-        document.getElementById("error").style.visibility = 'hidden'
+        document.getElementById("error").style.visibility = 'hidden';
         var idprenotazione = document.getElementById("idprenotazione").value;
-        console.log("START "+stato +", idprenotazione:"+ idprenotazione)
+        var totem_id = 1;
+        console.log("START "+stato +", idprenotazione:"+ idprenotazione);
 
         if(!idprenotazione){
             document.getElementById("error").style.visibility = 'visible';
@@ -100,13 +101,13 @@
             return;
         }
 
-        url = "https://dead-teal-tiara.cyclic.app/PRENOTAZIONI/" + idprenotazione;
+        url = "http://localhost:5000/PRENOTAZIONI/" + idprenotazione;
         const response = await fetch(url, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ stato: stato }),
+          body: JSON.stringify({ stato: stato, totem_id: totem_id }),
         });
         const r = await response.json();
         console.log(r);
@@ -138,7 +139,7 @@
         <button type="button" name="preleva" onclick="azione('prelevato')" class="bottone verde">
           RITIRA
         </button>
-        <button type="button" name="consegna" onclick="azione('consegnato')" class="bottone blue">
+        <button type="button" name="consegna" onclick="azione('in consegna')" class="bottone blue">
           CONSEGNA
         </button>
       </div>

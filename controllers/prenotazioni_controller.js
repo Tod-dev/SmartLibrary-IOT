@@ -60,6 +60,13 @@ exports.insertPrenotazione = async (req, res) => {
         libro
       ]
     );
+    await db.query(
+      `update scompartimenti
+       set stato = 'prenotato' where id = $1`,
+      [
+        scompartimento_id
+      ]
+    );
     /* SEND MQTT MESSAGE */
     //IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE
     const codice = 1;
@@ -78,7 +85,7 @@ exports.insertPrenotazione = async (req, res) => {
   body: {
     "stato": "prelevato"
   }
-  Aggiorna lo stato della prenotazione (parametro stato: prenotato, prelevato, consegnato) 
+  Aggiorna lo stato della prenotazione (parametro stato: prenotato, prelevato, consegnato, in consegna) 
 */
 exports.updatePrenotazione = async (req, res) => {
   try {
@@ -86,17 +93,117 @@ exports.updatePrenotazione = async (req, res) => {
     const body = req.body;
     console.log(body);
     const stato = body["stato"];
+    const totem_id = body["totem_id"];
+    scompartimento_id = body["scompartimento_id"];
 
-    if (!stato) {
-      throw { error: "stato is missing" };
+    if (!stato || !totem_id) {
+      throw { error: "stato or totem_id is missing" };
     }
 
-    if (stato != 'prenotato' && stato != 'prelevato' && stato != 'consegnato') {
-      throw { error: "stato is wrong: value must be in (prenotato, prelevato, consegnato) " };
+    if(stato == 'consegnato' && !scompartimento_id){
+      throw { error: "scompartimento_id is missing" };
     }
 
-    const {rows: dati_prenotazione} = await db.query(`
-      select scompartimenti.id as scompartimento_id, totems.id as totem_id
+    if (stato != 'prelevato' && stato != 'consegnato' && stato != 'in consegna') {
+      throw { error: "stato is wrong: value must be in (prelevato, consegnato, in consegna) " };
+    }
+
+    if(stato == 'in consegna'){
+      const {rows: nuovo_scompartimento} = await db.query(`
+        select s.id as scompartimento_id
+        from scompartimenti s join totems t on (s.totem_id = t.id)
+        where s.stato = 'libero' and t.id = $1
+        limit 1`,
+        [totem_id]
+      )
+
+      if(nuovo_scompartimento.length == 0){
+        return { json: `Spiacenti, ma il totem non ha scompartimenti liberi al momento` };
+      }
+
+      scompartimento_id = nuovo_scompartimento[0]["scompartimento_id"];
+    }
+
+    if(stato == 'prelevato'){
+      const {rows: dati_prenotazione} = await db.query(`
+        select libri.scompartimento_id as scompartimento_id, libri.id as libro_id
+        from prestiti
+        join libri on (libri.id = prestiti.libro_id)
+        where prestiti.id = $1`,
+        [id_prenotazione]
+      )
+      if (dati_prenotazione.length == 0){
+        throw { error: "dati_prenotazione non esistenti" };
+      }
+
+      scompartimento_id = dati_prenotazione[0]["scompartimento_id"];
+
+      await db.query(
+        `update libri 
+        set scompartimento_id = NULL
+        where scompartimento_id = $1 `,
+          [
+            scompartimento_id
+          ]
+        );
+
+      await db.query(
+        `update scompartimenti 
+        set stato = 'libero'
+        where id = $1 `,
+          [
+            scompartimento_id
+          ]
+      );
+    }
+
+    if(stato == 'consegnato'){
+      const {rows: dati_prenotazione} = await db.query(`
+        select libri.id as libro_id
+        from prestiti
+        join libri on (libri.id = prestiti.libro_id)
+        where prestiti.id = $1`,
+        [id_prenotazione]
+      )
+      if (dati_prenotazione.length == 0){
+        throw { error: "dati_prenotazione non esistenti" };
+      }
+
+      const libro_id = dati_prenotazione[0]["libro_id"];
+
+      await db.query(
+        `update libri 
+        set scompartimento_id = $1
+        where id = $2 `,
+          [
+            scompartimento_id,
+            libro_id
+          ]
+        );
+
+      await db.query(
+        `update scompartimenti 
+        set stato = 'occupato'
+        where id = $1 `,
+          [
+            scompartimento_id
+          ]
+        );
+    }
+
+    await db.query(
+      `update prestiti 
+      set stato = $2, 
+      data_fine_prestito = ${stato === 'consegnato' ? 'now()' : 'NULL'}
+      where id = $1 `,
+        [
+          id_prenotazione,
+          stato
+        ]
+    );
+
+    /*const {rows: dati_prenotazione} = await db.query(`
+      select scompartimenti.id as scompartimento_id, totems.id as totem_id, libri.id as libro_id
       from prestiti
       join libri on (libri.id = prestiti.libro_id)
       join scompartimenti on (libri.scompartimento_id = scompartimenti.id)
@@ -108,26 +215,24 @@ exports.updatePrenotazione = async (req, res) => {
       throw { error: "dati_prenotazione non esistenti" };
     }
     const scompartimento_id = dati_prenotazione[0]["scompartimento_id"];
-    const totem_id = dati_prenotazione[0]["totem_id"];
+    //const totem_id = dati_prenotazione[0]["totem_id"];
+    const libro_id = dati_prenotazione[0]["libro_id"];*/
 
-    await db.query(
-    `update prestiti 
-    set stato = $2, 
-    data_fine_prestito = ${stato === 'consegnato' ? 'now()' : 'NULL'}
-    where id = $1 `,
-      [
-        id_prenotazione,
-        stato
-      ]
-    );
+    
+
+    
+
     /* SEND MQTT MESSAGE */
     //IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE
     let codice;
-    if (stato === 'consegnato'){
+    if (stato === 'in consegna'){
       codice = 3;
     }
     else if (stato === 'prelevato'){
       codice = 2;
+    }
+    else if (stato == 'consegnato'){
+      return { json: `Prestito ${id_prenotazione} aggiornato allo stato ${stato} correttamente` };
     }
     else{
       throw { error: "STATO NON VALIDO" };
