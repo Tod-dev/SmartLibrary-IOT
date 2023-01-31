@@ -17,7 +17,8 @@ create table totems(
 
 create table scompartimenti(
 	id int not null primary key,	
-	totem_id int references totems(id)
+	totem_id int references totems(id),
+	stato varchar(20) check (stato in ('libero', 'occupato', 'prenotato'))
 );
 
 create table libri(
@@ -40,18 +41,7 @@ create table prestiti(
 	libro_id int not null references libri(id),
 	data_inizio_prestito date not null,
 	data_fine_prestito date null,
-	stato varchar CONSTRAINT stato_values check (stato in ('prenotato', 'prelevato', 'consegnato'))
+	stato varchar CONSTRAINT stato_values check (stato in ('prenotato', 'prelevato', 'consegnato', 'in consegna'))
 );
 
 CREATE SEQUENCE serialPrestiti START 4;
-
-alter table scompartimenti add stato varchar(20) check (stato in ('libero', 'occupato', 'prenotato'));
-
-alter table prestiti drop column stato;
-alter table prestiti add stato varchar CONSTRAINT stato_values check (stato in ('prenotato', 'prelevato', 'consegnato', 'in consegna'))
-
-update scompartimenti 
-set stato = 'occupato' where id in (1,2,3,4);
-
-update scompartimenti 
-set stato = 'libero' where id in (5,6,7,8)
