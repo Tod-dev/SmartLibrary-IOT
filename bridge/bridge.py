@@ -26,6 +26,9 @@ LIBRO_PRENOTATO = 1
 LIBRO_PRONTO_PER_RITIRO = 2
 NUM_SCOMPARTIMENTO = 3
 
+BYTE_INIZIO = 255
+BYTE_FINE = 254
+
 class Bridge():
 
 	def __init__(self):
@@ -114,7 +117,6 @@ class Bridge():
 
 			if codice == NUM_SCOMPARTIMENTO:
 				self.elenco_prenotazioni[idscompartimento] = idprenotazione
-				self.httpRequest(idprenotazione, idscompartimento, 'consegnato')
 		
 	def outSeriale(self, idscompartimento, codice):
 		"""
@@ -123,16 +125,13 @@ class Bridge():
 		FF|idscompartimento|codice|FE
 		"""
 		idscompartimento = idscompartimento.to_bytes(2, 'little')
-		codice = codice.to_bytes(1, 'little')
-		pacchetto = list()
-		pacchetto.append(b'\xff')
-		pacchetto.append(idscompartimento[0].to_bytes(1, 'little'))
-		pacchetto.append(idscompartimento[1].to_bytes(1, 'little'))
-		pacchetto.append(codice)
-		pacchetto.append(b'\xfe')
+
+		self.ser.write(BYTE_INIZIO.to_bytes(1, 'little'))
+		self.ser.write(idscompartimento[1].to_bytes(1, 'little'))
+		self.ser.write(idscompartimento[0].to_bytes(1, 'little'))
+		self.ser.write(codice.to_bytes(1, 'little'))
+		self.ser.write(BYTE_FINE.to_bytes(1, 'little'))
 		print("BRIDGE -> ARDUINO")
-		print(pacchetto)
-		self.ser.write(pacchetto)
 	
 	def outSerialeUpdate(self, stato_scompartimenti):
 		"""
@@ -140,14 +139,12 @@ class Bridge():
 		---------
 		FF|statoScomp1|statoScomp2|...|FE
 		"""
-		pacchetto = list()
-		pacchetto.append(b'\xff')
+
+		self.ser.write(BYTE_INIZIO.to_bytes(1, 'little'))
 		for stato in stato_scompartimenti:
-			pacchetto.append(stato.to_bytes(1, 'little'))
-		pacchetto.append(b'\xfe')
+			self.ser.write(stato.to_bytes(1, 'little'))
+		self.ser.write(BYTE_FINE.to_bytes(1, 'little'))
 		print("BRIDGE -> ARDUINO")
-		print(pacchetto)
-		self.ser.write(pacchetto)
 
 	def loop(self):
 		# infinite loop for serial managing
@@ -159,6 +156,7 @@ class Bridge():
 				if self.ser.in_waiting>0:
 					# data available from the serial port
 					lastchar=self.ser.read(1)
+					#print("CARATTERE: {}".format(lastchar))
 					self.inbuffer.append(lastchar)
 
 					if lastchar==b'\xfe' and len(self.inbuffer) == 5: #EOL
@@ -175,8 +173,8 @@ class Bridge():
 		if self.inbuffer[0] != b'\xff':
 			return False
 		print(self.inbuffer)
-		idscompartimento = int.from_bytes(self.inbuffer[1], byteorder='little')
-		idscompartimento += (int.from_bytes(self.inbuffer[2], byteorder='little') << 8)
+		idscompartimento = int.from_bytes(self.inbuffer[2], byteorder='little')
+		idscompartimento += (int.from_bytes(self.inbuffer[1], byteorder='little') << 8)
 		intero = int.from_bytes(self.inbuffer[3], byteorder='little')
 
 		if idscompartimento == 0 and intero == RICHIESTA_UPDATE:
