@@ -90,7 +90,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"stato\" : \"consegnato\"\n}",
+					"raw": "{\n    \"stato\" : \"consegnato\",\n    \"totem_id\" : 1,\n    \"scompartimento_id\": 3\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -98,17 +98,78 @@
 					}
 				},
 				"url": {
-					"raw": "{{url}}/prenotazioni/1",
+					"raw": "{{url}}/prenotazioni/56",
 					"host": [
 						"{{url}}"
 					],
 					"path": [
 						"prenotazioni",
-						"1"
+						"56"
 					]
 				}
 			},
-			"response": []
+			"response": [
+				{
+					"name": "consegnato",
+					"originalRequest": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"stato\" : \"consegnato\",\n    \"totem_id\" : 1,\n    \"scompartimento_id\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/prenotazioni/56",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"prenotazioni",
+								"56"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "prelevato",
+					"originalRequest": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"stato\": \"prelevato\",\n    \"totem_id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/prenotazioni/56",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"prenotazioni",
+								"56"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				}
+			]
 		},
 		{
 			"name": "totems con almeno uno scompartimentolibero",
