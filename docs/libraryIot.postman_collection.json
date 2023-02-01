@@ -109,6 +109,24 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "totems con almeno uno scompartimentolibero",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/totems/scompartimentolibero",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"totems",
+						"scompartimentolibero"
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }

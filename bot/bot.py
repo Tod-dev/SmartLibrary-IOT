@@ -72,7 +72,7 @@ def consegna(update, context):
     print(update.message.text)
     #RITORNARE LA LISTA DI TOTEM CON ALMENO UNO SCOMPARTIMENTO LIBERO
     try:
-        r = requests.get('{}/totems?query=liberi'.format(SERVER_URL))
+        r = requests.get('{}/totems/scompartimentolibero'.format(SERVER_URL))
         print(r.text)
         if r.text == '[]':
             update.message.reply_text('Spiacenti, ma non ci sono totem liberi al momento')
