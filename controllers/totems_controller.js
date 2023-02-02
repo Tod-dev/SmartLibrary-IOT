@@ -86,7 +86,7 @@ exports.getTotemsFromBook = async (req, res) => {
     console.log("getTotemsFromBook - bookname received :", bookname);
 
     const { rows } = await db.query(
-      `select distinct t.id as totem_id, l.scompartimento_id, l.id as libro_id
+      `select distinct t.id as totem_id, l.scompartimento_id, l.id as libro_id, l.img as img
        from libri l join scompartimenti s on (l.scompartimento_id = s.id) 
        join totems t on (t.id = s.totem_id)
        where LOWER(l.nome) like LOWER(concat('%','${bookname}','%')) and 

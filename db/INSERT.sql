@@ -14,10 +14,10 @@ insert into scompartimenti values (1, 1, 'occupato'),(2, 1, 'occupato'),(3, 1, '
 insert into utenti values (1, 'michaelbianco', 'iotLibrary'), (2, 'marc0todar0', 'iotLibrary'), (3, 'matteberto99', 'iotLibrary');
 
 insert into libri values 
-	(1,'Dylan Dog - I Nuovi Barbari', 2, 4, 1),
-	(2,'Cime Tempestose', 1, 1, 2),
-	(3,'Il Buio oltre la siepe', 3, 2, 3),
-	(4,'Io non ho paura', 4, 3, 4);
+	(1,'Dylan Dog - I Nuovi Barbari', 2, 4, 1, 'https://shop.sergiobonelli.it/resizer/-1/-1/true/ce17ac40d4525d60d687ab1e318d70b9.jpg--i_nuovi_barbari.jpg'),
+	(2,'Cime Tempestose', 1, 1, 2, 'https://m.media-amazon.com/images/I/812WFlUxpsL.jpg'),
+	(3,'Il Buio oltre la siepe', 3, 2, 3, 'https://m.media-amazon.com/images/I/81QJbER-cbL.jpg'),
+	(4,'Io non ho paura', 4, 3, 4, 'https://m.media-amazon.com/images/I/51PoU3PanvL.jpg');
 	
 delete from prestiti;
 /*insert into prestiti values

@@ -4,6 +4,8 @@ from config import BOTKEY,SERVER_URL
 import requests
 from datetime import datetime
 import json
+from PIL import Image
+from io import BytesIO
 #from setupMqtt import ClientMQTT
 
 #LOGGING
@@ -56,12 +58,16 @@ def prenota(update, context):
         d["libro_id"] = idLibro
         d["scompartimento_id"] = r['scompartimento_id']
         d["totem_id"] = r['totem_id']
+        img = r["img"]
         #d = json.dumps(d)
         print(d)
         r = requests.post(url=SERVER_URL+"/prenotazioni", json=d)
         r = json.loads(r.text) 
-
         update.message.reply_text(r["descrizione"], parse_mode='HTML')
+        if img != "":
+            url = img
+            response = requests.get(url)    
+            update.message.reply_photo(photo=BytesIO(response.content))
     except Exception as e:
         print("ERRORE: {}".format(e))
         update.message.reply_text("Errore nel reperimento del libro")

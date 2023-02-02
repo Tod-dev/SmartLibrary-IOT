@@ -45,3 +45,5 @@ create table prestiti(
 );
 
 CREATE SEQUENCE serialPrestiti START 4;
+
+ALTER TABLE public.libri ADD img bytea NULL;
