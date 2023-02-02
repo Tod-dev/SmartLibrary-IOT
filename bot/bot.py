@@ -28,7 +28,7 @@ def help(update, context):
     text = '\n'.join(operazioniDesc)
     update.message.reply_text(text)
 
-#TODO
+
 def prenota(update, context):
     """Send a message when the command /now is issued."""
     print(update.message.text)
@@ -72,7 +72,7 @@ def prenota(update, context):
         print("ERRORE: {}".format(e))
         update.message.reply_text("Errore nel reperimento del libro")
 
-#TODO
+
 def consegna(update, context):
     """Send a message when the command /now is issued."""
     print(update.message.text)
@@ -94,6 +94,56 @@ def consegna(update, context):
         print("ERRORE: {}".format(e))
         update.message.reply_text("Errore nella lettura dei totem liberi")
 
+def consigliami(update, context):
+    """Send a message when the command /consigliami is issued."""
+    print(update.message.text)
+    #RITORNARE La lista di libri consigliati dall'ai
+    msg = update.message.text.split('/consigliami ')
+    if len(msg) == 1:
+        #ho solo la scritta /consigliami
+        return update.message.reply_text("Per consiglirti un libro scrivi /consigliami seguito dal nome dell' ultimo libro che hai letto ")
+    try:
+        libro = msg[1]
+        r = requests.get('https://data.readow.ai/api/titles/quick/0?tokens={}'.format(libro))
+        print(r.text)
+        if r.text == '[]':
+            update.message.reply_text('Spiacenti, ma non trovo il libro che hai inserito')
+            return        
+        r = json.loads(r.text)[0]
+        # "bookId": "30366603-prova-ad-amarmi-ancora",
+        # "title": "Prova ad amarmi ancora",
+        # "isbn": "B01CZ8920S",
+        # "workId": "50878346-prova-ad-amarmi-ancora",
+        # "language": "italian",
+        # "author": "Sylvia Kant",
+        # "search": null,
+        # "popular": 0.000053165088,
+        # "hasCover": false,
+        # "coverLink": null
+        print(r)
+        r = requests.get('https://data.readow.ai/api/transformer?id={}'.format(r["workId"]))
+        print(r.text)
+        if r.text == '[]':
+            update.message.reply_text('Spiacenti, ma non trovo il libro che hai inserito')
+            return        
+        r = json.loads(r.text)        
+        update.message.reply_text("Ecco alcuni libri che ti consiglio", parse_mode='HTML')
+        count = 0
+        for l in r:
+            count += 1
+            update.message.reply_text(l["title"] + '-' + ' Author: '+ l["author"], parse_mode='HTML')
+            img = l["coverLink"]
+            if img != "":
+                url = img
+                response = requests.get(url)    
+                update.message.reply_photo(photo=BytesIO(response.content))
+            if count == 3:
+                break
+
+    except Exception as e:
+        print("ERRORE: {}".format(e))
+        update.message.reply_text("Errore nella lettura dei totem liberi")
+
 #START BOT
 def startBot():
     global updater
@@ -106,6 +156,7 @@ def startBot():
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("prenota", prenota))
     dp.add_handler(CommandHandler("consegna", consegna))
+    dp.add_handler(CommandHandler("consigliami", consigliami))
     
     updater.start_polling()
     return updater
