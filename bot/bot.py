@@ -14,7 +14,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 def getOperations():
-    return ['prenota','consegna']
+    return ['prenota','consegna','consigliami']
 
 #COMANDI
 def start(update, context):
