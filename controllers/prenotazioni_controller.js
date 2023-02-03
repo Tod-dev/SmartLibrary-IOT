@@ -120,8 +120,9 @@ exports.updatePrenotazione = async (req, res) => {
 
     stato_prestito = stato_prestito_rs[0]["stato"];
 
+    //check stato attuale
     if (stato == 'prelevato') {
-      if(stato_prestito != 'prenotato'){
+      if (stato_prestito != 'prenotato') {
         throw { error: "Il libro non è nello stato prenotato! Impossibile prelevarlo." };
       }
       const { rows: dati_prenotazione } = await db.query(`
@@ -157,7 +158,7 @@ exports.updatePrenotazione = async (req, res) => {
     }
 
     if (stato == 'in consegna') {
-      if(stato_prestito != 'prelevato'){
+      if (stato_prestito != 'prelevato') {
         throw { error: "Il libro non è nello stato prelevato! Impossibile passarlo in consegna." };
       }
       const { rows: nuovo_scompartimento } = await db.query(`
@@ -175,9 +176,8 @@ exports.updatePrenotazione = async (req, res) => {
       scompartimento_id = nuovo_scompartimento[0]["scompartimento_id"];
     }
 
-
     if (stato == 'consegnato') {
-      if(stato_prestito != 'in consegna'){
+      if (stato_prestito != 'in consegna') {
         throw { error: "Il libro non è nello stato in consegna! Impossibile consegnarlo." };
       }
       const { rows: dati_prenotazione } = await db.query(`
@@ -213,6 +213,7 @@ exports.updatePrenotazione = async (req, res) => {
       );
     }
 
+    //stato attuale ok -> CAMBIO STATO PRENOTAZIONE
     await db.query(
       `update prestiti 
       set stato = $2, 
@@ -224,28 +225,34 @@ exports.updatePrenotazione = async (req, res) => {
       ]
     );
 
-    /* SEND MQTT MESSAGE */
-    //IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE
-    let codice;
+    //SEND MQTT 
     if (stato === 'in consegna') {
-      codice = 3;
-    }
-    else if (stato === 'prelevato') {
-      codice = 2;
-    }
-    else if (stato == 'consegnato') {
-      return { json: `Prestito ${id_prenotazione} aggiornato allo stato ${stato} correttamente` };
-    }
-    else {
-      throw { error: "STATO NON VALIDO" };
-    }
-    MqttHandler.sendMessage(totem_id, `${scompartimento_id}/${codice}/${id_prenotazione}`);
+      const { rows: dati_prenotazione } = await db.query(`
+      select  libri."nfc-id" as nfc_libro
+      from prestiti
+      join libri on (libri.id = prestiti.libro_id)
+      where prestiti.id = $1`,
+        [id_prenotazione]
+      )
+      if (dati_prenotazione.length == 0) {
+        throw { error: "dati_prenotazione non esistenti" };
+      }
 
-    if (stato == 'in consegna') {
+      const nfc_libro = dati_prenotazione[0]["nfc_libro"];
+      const codice = 3;
+      /* SEND MQTT MESSAGE */
+      //IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE/nfc_expected
+      MqttHandler.sendMessage(totem_id, `${scompartimento_id}/${codice}/${id_prenotazione}/${nfc_libro}`);
       return { json: `Prestito ${id_prenotazione} aggiornato allo stato ${stato} correttamente, numero scompartimento: ${scompartimento_id}` };
     }
-
+    if (stato === 'prelevato') {
+      const codice = 2;
+      /* SEND MQTT MESSAGE */
+      //IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE
+      MqttHandler.sendMessage(totem_id, `${scompartimento_id}/${codice}/${id_prenotazione}`);
+    }
     return { json: `Prestito ${id_prenotazione} aggiornato allo stato ${stato} correttamente` };
+
   } catch (error) {
     throw error;
   }
