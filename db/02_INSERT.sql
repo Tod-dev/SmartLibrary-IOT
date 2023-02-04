@@ -15,9 +15,9 @@ insert into utenti values (1, 'michaelbianco', 'iotLibrary'), (2, 'marc0todar0',
 
 insert into libri values 
 	(1,'Dylan Dog - I Nuovi Barbari', 2, 4, 1, 'https://shop.sergiobonelli.it/resizer/-1/-1/true/ce17ac40d4525d60d687ab1e318d70b9.jpg--i_nuovi_barbari.jpg','04e92c54'),
-	(2,'Cime Tempestose', 1, 1, 2, 'https://m.media-amazon.com/images/I/812WFlUxpsL.jpg','04eb2c54'),
+	(2,'Cime Tempestose', 1, 1, 2, 'https://m.media-amazon.com/images/I/71U4qfrRjtL.jpg','04eb2c54'),
 	(3,'Il Buio oltre la siepe', 3, 2, 3, 'https://m.media-amazon.com/images/I/81QJbER-cbL.jpg','04df2c54'),
-	(4,'Io non ho paura', 4, 3, 4, 'https://m.media-amazon.com/images/I/51PoU3PanvL.jpg','04e12c54');
+	(4,'Io non ho paura', 4, 3, 4, 'https://m.media-amazon.com/images/I/41+WZIs5YSL._SX322_BO1,204,203,200_.jpg','04e12c54');
 	
 delete from prestiti;
 /*insert into prestiti values
