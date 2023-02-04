@@ -107,29 +107,37 @@ class Bridge():
 
 		if msg.topic == self.topic:
 			#gestisci il messaggio e scrivi sulla seriale
-			#In msg c'è IDScompartimento/CODICE/IDPRENOTAZIONE
+			#In msg c'è IDScompartimento/CODICE/IDPRENOTAZIONE/NFC_ID
 			msg = msg.payload.decode('utf-8')
 			msg = msg.split('/')
 			idscompartimento = int(msg[0])
 			codice = int(msg[1])
 			idprenotazione = int(msg[2])
-			self.outSeriale(idscompartimento, codice)
 
 			if codice == NUM_SCOMPARTIMENTO:
 				self.elenco_prenotazioni[idscompartimento] = idprenotazione
+				nfc_id = str(msg[3])
+				self.outSeriale(idscompartimento, codice, nfc_id)
+			else:
+				self.outSeriale(idscompartimento, codice)
 		
-	def outSeriale(self, idscompartimento, codice):
+	def outSeriale(self, idscompartimento, codice, nfc_id='00000000'):
 		"""
 		PACCHETTO
 		---------
 		FF|idscompartimento|codice|FE
 		"""
+		nfc_id = bytearray.fromhex(nfc_id)
 		idscompartimento = idscompartimento.to_bytes(2, 'little')
 
 		self.ser.write(BYTE_INIZIO.to_bytes(1, 'little'))
 		self.ser.write(idscompartimento[1].to_bytes(1, 'little'))
 		self.ser.write(idscompartimento[0].to_bytes(1, 'little'))
 		self.ser.write(codice.to_bytes(1, 'little'))
+		self.ser.write(nfc_id[0].to_bytes(1,'little'))
+		self.ser.write(nfc_id[1].to_bytes(1,'little'))
+		self.ser.write(nfc_id[2].to_bytes(1,'little'))
+		self.ser.write(nfc_id[3].to_bytes(1,'little'))
 		self.ser.write(BYTE_FINE.to_bytes(1, 'little'))
 		print("BRIDGE -> ARDUINO")
 	
@@ -176,6 +184,11 @@ class Bridge():
 		idscompartimento = int.from_bytes(self.inbuffer[2], byteorder='little')
 		idscompartimento += (int.from_bytes(self.inbuffer[1], byteorder='little') << 8)
 		intero = int.from_bytes(self.inbuffer[3], byteorder='little')
+
+		# nfc_id = str(self.inbuffer[4].decode('utf-8'))
+		# nfc_id += str(self.inbuffer[5].decode('utf-8'))
+		# nfc_id += str(self.inbuffer[6].decode('utf-8'))
+		# nfc_id += str(self.inbuffer[7].decode('utf-8'))
 
 		if idscompartimento == 0 and intero == RICHIESTA_UPDATE:
 			#UPDATE RICHIESTO DALL'ARDUINO

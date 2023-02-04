@@ -2,8 +2,11 @@
 #include <SPI.h>
 #define SDA_PIN 10
 #define RST_PIN 9
-MFRC522 nfcReader(SDA_PIN, RST_PIN);
+#define BUZ_PIN 14
+#define LENGTH_UID 4
+#define NFC_READ_TIMEOUT 10000
 
+MFRC522 nfcReader(SDA_PIN, RST_PIN);
 const int ledPins[] = {3,5,7};
 const int shelfIds[] = {1,2,3};
 const int totLeds = 3;
@@ -12,6 +15,10 @@ int shelf;
 int code;
 int s;
 bool setupComplete;
+//byte byteNfcUID[4];
+//byte byteSerialUID[4];
+String stringNfcUID;
+String stringSerialUID;
 
 int readNFC()
 {
@@ -22,11 +29,34 @@ int readNFC()
   }
   
   unsigned long timer = millis();
-  while(millis()-timer<10000)
+  while(millis()-timer < NFC_READ_TIMEOUT)
   {
-    if (nfcReader.PICC_IsNewCardPresent()) return 0;
-    if (nfcReader.PICC_ReadCardSerial()) return 0;
+    if (nfcReader.PICC_IsNewCardPresent())
+    {
+      if (nfcReader.PICC_ReadCardSerial())
+      {
+        //rfid.uid.size
+        //byte *byteUID = nfcReader.uid.uidByte;
+        stringNfcUID = "";
+        for (int i=0; i<LENGTH_UID; i++)
+        {
+          //byteNfcUID[i]=nfcReader.uid.uidByte[i];
+          stringNfcUID += String(nfcReader.uid.uidByte[i], HEX);
+        }
+        //unsigned long hexUID;
+        //hexUID = byteUID[0] << 24;
+        //hexUID += byteUID[1] << 16;
+        //hexUID += byteUID[2] << 8;
+        //hexUID += byteUID[3];
+        //long int intUID = (int)hexUID;
+        nfcReader.PICC_HaltA(); //halt PICC
+        nfcReader.PCD_StopCrypto1(); //stop encryption on PCD
+        //return intUID;
+        return 1;
+      }
+    }
   }
+  //posso eventualmente settare a zero tutti gli elementi di byteNfcUID
   return -1;
 }
 
@@ -64,11 +94,41 @@ int findIdArr(int shl)
   return -1;
 }
 
+void buzzerError(int inter)
+{
+  unsigned long timer = millis();
+  
+  while(millis()-timer < inter)
+  {
+    int musicalVal = random(200, 1000);
+    tone(BUZ_PIN, musicalVal);
+    unsigned long delayTimer = millis();
+    while(millis()-delayTimer < 200){}
+  }
+  noTone(BUZ_PIN);
+}
+
+//void sendToBridge(int intero, int shl, byte *nfcUID=-1)
 void sendToBridge(int intero, int shl)
 {
+  
   Serial.write(0XFF);
   Serial.write(highByte(shl));
   Serial.write(lowByte(shl));
+  /*if (nfcUID>0)
+  {
+    for (int i=0; i<LENGTH_UID; i++)
+    {
+      Serial.write(nfcUID[i]);
+    }
+  }
+  else
+  {
+    for (int i=0; i<LENGTH_UID; i++)
+    {
+      Serial.write(0);
+    }
+  }*/
   Serial.write(intero);
   Serial.write(0XFE);
 }
@@ -84,17 +144,42 @@ void performInActions()
       case 1:
         changeLedColorShelf(ledPins[idArr]);
         break;
+        
       case 2:
         switchOnAllShelfLeds(ledPins[idArr]);
-        resNFC = readNFC();
+        do
+        {
+          resNFC = readNFC();
+          if (resNFC < 0)
+          {
+            buzzerError(2000);
+          }
+        }
+        while(resNFC < 0);  
         switchOffAllShelfLeds(ledPins[idArr]);
-        sendToBridge(1,shelf);
+        //sendToBridge(1, shelf, byteNfcUID);
+        sendToBridge(1, shelf);
         break;
+        
       case 3:
         switchOnAllShelfLeds(ledPins[idArr]);
-        resNFC = readNFC();
-        sendToBridge(2,shelf);
-        switchOnGreenShelfLed(ledPins[idArr]);        
+        int attempts = 0;
+        bool checkIdOk = false;
+        do
+        {
+          resNFC = readNFC();
+          if (resNFC < 0)
+          {
+            buzzerError(2000);
+          }
+          checkIdOk = (stringSerialUID == stringNfcUID);
+          attempts += 1;
+        }
+        while(((resNFC < 0) || !checkIdOk) && attempts < 3);
+        //sendToBridge(2, shelf, byteNfcUID);
+        
+        if (checkIdOk) {sendToBridge(2, shelf); switchOnGreenShelfLed(ledPins[idArr]);}
+        else switchOffAllShelfLeds(ledPins[idArr]);        
         break;
     }
   }
@@ -105,6 +190,8 @@ void setup()
   Serial.begin(9600);
   SPI.begin();
   nfcReader.PCD_Init();
+  
+  pinMode(BUZ_PIN,OUTPUT);
   for (int i = 0; i < totLeds; i++)
   {
     pinMode(ledPins[i], OUTPUT);
@@ -117,6 +204,8 @@ void setup()
   curstate = -1;
   s = 0;
   setupComplete = false;
+  stringNfcUID = "";
+  stringSerialUID = "";
 
   sendToBridge(3,0);
 }
@@ -138,11 +227,12 @@ void loop()
     //on entry and on exit actions
     if ((setupComplete) && (fstate != curstate))
     {
-       if (fstate==0) {shelf = -1; code = -1;}
+       if (fstate==0) {shelf = -1; code = -1; stringSerialUID = ""; stringNfcUID = "";}
        else if (fstate==1) shelf = val * 256;
        else if (fstate==2) shelf = shelf + val;
        else if (fstate==3) code = val;
-       else if (fstate==4 && val == 0XFE) {performInActions();}
+       else if (fstate>3 && fstate<8) stringSerialUID += String(val, HEX);
+       else if (fstate==8 && val == 0XFE) performInActions();
     }
 
     if ((!setupComplete) && (fstate != curstate))

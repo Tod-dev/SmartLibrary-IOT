@@ -123,7 +123,7 @@ exports.updatePrenotazione = async (req, res) => {
       select stato,libri.scompartimento_id as scompartimento_id, libri.id as libro_id
       from prestiti
       join libri on (libri.id = prestiti.libro_id)
-      where id = $1`,
+      where prestiti.id = $1`,
       [id_prenotazione]
     )
     if (stato_prestito_rs.length == 0) {
@@ -162,7 +162,7 @@ exports.updatePrenotazione = async (req, res) => {
 
     let scompartimento_id_in_consegna;
     if (stato == 'in consegna') {
-      if (stato_prestito_attuale != 'prelevato') {
+      if (stato_prestito_attuale != 'prelevato' && stato_prestito_attuale != 'in consegna') {
         throw { error: "Il libro non è nello stato prelevato! Impossibile passarlo in consegna." };
       }
       const { rows: nuovo_scompartimento } = await db.query(`
@@ -184,18 +184,6 @@ exports.updatePrenotazione = async (req, res) => {
       if (stato_prestito_attuale != 'in consegna') {
         throw { error: "Il libro non è nello stato in consegna! Impossibile consegnarlo." };
       }
-      const { rows: dati_prenotazione } = await db.query(`
-        select libri.id as libro_id
-        from prestiti
-        join libri on (libri.id = prestiti.libro_id)
-        where prestiti.id = $1`,
-        [id_prenotazione]
-      )
-      if (dati_prenotazione.length == 0) {
-        throw { error: "dati_prenotazione non esistenti" };
-      }
-
-      const libro_id = dati_prenotazione[0]["libro_id"];
 
       await db.query(
         `update libri 
@@ -203,7 +191,7 @@ exports.updatePrenotazione = async (req, res) => {
         where id = $2 `,
         [
           scompartimento_id,
-          libro_id
+          libro_id_attuale
         ]
       );
 
@@ -252,7 +240,7 @@ exports.updatePrenotazione = async (req, res) => {
       const codice = 2;
       /* SEND MQTT MESSAGE */
       //IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE
-      MqttHandler.sendMessage(totem_id, `${scompartimento_id}/${codice}/${id_prenotazione}`);
+      MqttHandler.sendMessage(totem_id, `${scompartimento_id_attuale}/${codice}/${id_prenotazione}`);
     }
     return { json: `Prestito ${id_prenotazione} aggiornato allo stato ${stato} correttamente` };
 

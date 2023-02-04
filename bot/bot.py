@@ -101,7 +101,7 @@ def consigliami(update, context):
     msg = update.message.text.split('/consigliami ')
     if len(msg) == 1:
         #ho solo la scritta /consigliami
-        return update.message.reply_text("Per consiglirti un libro scrivi /consigliami seguito dal nome dell' ultimo libro che hai letto ")
+        return update.message.reply_text("Per consigliarti un libro scrivi /consigliami seguito dal nome dell' ultimo libro che hai letto ")
     try:
         libro = msg[1]
         r = requests.get('https://data.readow.ai/api/titles/quick/0?tokens={}'.format(libro))
