@@ -74,6 +74,8 @@
 			color: #9F6000;
 			background-color: #FEEFB3;
 			background-image: url('https://i.imgur.com/Z8q7ww7.png');
+      visibility:hidden;
+
 		}
 		.error{
 			color: #D8000C;
@@ -91,6 +93,8 @@
       async function azione(stato) {
         document.getElementById("ok").style.visibility = 'hidden';
         document.getElementById("error").style.visibility = 'hidden';
+        document.getElementById("warning").style.visibility = 'hidden';
+
         var idprenotazione = document.getElementById("idprenotazione").value;
         var totem_id = 1;
         console.log("START "+stato +", idprenotazione:"+ idprenotazione);
@@ -101,7 +105,7 @@
             return;
         }
 
-        url = "http://localhost:5000/PRENOTAZIONI/" + idprenotazione;
+        url = "https://dead-teal-tiara.cyclic.app/prenotazioni/" + idprenotazione;
         const response = await fetch(url, {
           method: "PUT",
           headers: {
@@ -114,6 +118,9 @@
         if(response.ok){
             document.getElementById("ok").style.visibility = 'visible';
             document.getElementById("ok").innerHTML = r.json;
+            if(stato == 'in consegna'){
+              document.getElementById("warning").style.visibility = 'visible';
+            }
         }else{
             document.getElementById("error").style.visibility = 'visible';
             document.getElementById("error").innerHTML = "Errore nell'inserimento della prenotazione "+ idprenotazione;
@@ -121,11 +128,7 @@
       }
  
       function rimuovi(tipoMessaggio){
-        if(tipoMessaggio ==="ok"){
-            document.getElementById("ok").style.visibility = 'hidden'
-        }else{
-            document.getElementById("error").style.visibility = 'hidden'
-        }
+        document.getElementById(tipoMessaggio).style.visibility = 'hidden'
       }
     </script>
   </head>
@@ -144,8 +147,11 @@
         </button>
       </div>
 
-      <p id="ok" class="success" onclick="rimuovi('ok')"></p>
+      <p id="ok" class="success" onclick="rimuovi('ok')"></p>  
       <p id="error" class="error" onclick="rimuovi('error')"></p>
+      <p id ="warning" class="warning" onclick="rimuovi('warning')">
+        ATTENZIONE: la consegna è avvenuta con successo solo quando il led dello scompartimento diventa verde !
+      </p>
     </div>
   </body>
 </html>

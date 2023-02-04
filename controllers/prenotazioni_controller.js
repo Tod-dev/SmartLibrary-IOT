@@ -163,7 +163,7 @@ exports.updatePrenotazione = async (req, res) => {
     let scompartimento_id_in_consegna;
     if (stato == 'in consegna') {
       if (stato_prestito_attuale != 'prelevato' && stato_prestito_attuale != 'in consegna') {
-        throw { error: "Il libro non è nello stato prelevato! Impossibile passarlo in consegna." };
+        throw { error: "Il libro è già stato consegnato" };
       }
       const { rows: nuovo_scompartimento } = await db.query(`
         select s.id as scompartimento_id
