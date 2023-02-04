@@ -30,7 +30,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{url}}/totems?nomeLibro=I Nuovi Barbari",
+					"raw": "{{url}}/totems?nomeLibro=io non ho paura",
 					"host": [
 						"{{url}}"
 					],
@@ -50,7 +50,12 @@
 						},
 						{
 							"key": "nomeLibro",
-							"value": "I Nuovi Barbari"
+							"value": "I Nuovi Barbari",
+							"disabled": true
+						},
+						{
+							"key": "nomeLibro",
+							"value": "io non ho paura"
 						}
 					]
 				}
@@ -64,7 +69,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"utente\": \"marc0todar0\",\n    \"libro_id\": 1,\n    \"scompartimento_id\": 1,\n    \"totem_id\": 1\n}",
+					"raw": "{\n    \"utente\": \"marc0todar0\",\n    \"libro_id\": 2,\n    \"scompartimento_id\": 2,\n    \"totem_id\": 1\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -90,7 +95,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"stato\" : \"consegnato\",\n    \"totem_id\" : 1,\n    \"scompartimento_id\": 3\n}",
+					"raw": "{\n    \"stato\": \"prelevato\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -98,13 +103,13 @@
 					}
 				},
 				"url": {
-					"raw": "{{url}}/prenotazioni/56",
+					"raw": "{{url}}/prenotazioni/78",
 					"host": [
 						"{{url}}"
 					],
 					"path": [
 						"prenotazioni",
-						"56"
+						"78"
 					]
 				}
 			},
@@ -116,7 +121,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"stato\" : \"consegnato\",\n    \"totem_id\" : 1,\n    \"scompartimento_id\": 3\n}",
+							"raw": "{\n    \"stato\" : \"consegnato\",\n    \"scompartimento_id\": 3\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -146,7 +151,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"stato\": \"prelevato\",\n    \"totem_id\": 1\n}",
+							"raw": "{\n    \"stato\": \"prelevato\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -161,6 +166,36 @@
 							"path": [
 								"prenotazioni",
 								"56"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "in consegna",
+					"originalRequest": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"stato\" : \"in consegna\",\n    \"totem_id\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/prenotazioni/78",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"prenotazioni",
+								"78"
 							]
 						}
 					},
