@@ -15,33 +15,35 @@ import paho.mqtt.client as paho
 from paho import mqtt
 import json
 import ssl
-
-#INTERO
-LIBRO_RITIRATO = 1
-LIBRO_RICONSEGNATO = 2
-RICHIESTA_UPDATE = 3
-
-#CODICE
-LIBRO_PRENOTATO = 1
-LIBRO_PRONTO_PER_RITIRO = 2
-NUM_SCOMPARTIMENTO = 3
-
-BYTE_INIZIO = 255
-BYTE_FINE = 254
+import wx
+import threading
 
 class Bridge():
 
-	def __init__(self):
-		self.config_path = pathlib.Path(__file__).parent.absolute() / "config.ini"
-		self.config = configparser.ConfigParser()
-		self.config.read(self.config_path)
+	def __init__(self, frame):
+		self.ui = frame
+		#INTERO
+		self.LIBRO_RITIRATO = 1
+		self.LIBRO_RICONSEGNATO = 2
+		self.RICHIESTA_UPDATE = 3
+
+		#CODICE
+		self.LIBRO_PRENOTATO = 1
+		self.LIBRO_PRONTO_PER_RITIRO = 2
+		self.LIBRO_IN_CONSEGNA = 3
+
+		self.BYTE_INIZIO = 255
+		self.BYTE_FINE = 254
+
 		self.setupTotem()
 		self.setupSerial()
 		self.setupHTTP()
 		self.setupMQTT()
+		serial_thread = threading.Thread(target=self.loop)
+		serial_thread.start()
     
 	def setupTotem(self):
-		self.id = self.config.get("TOTEM","ID")
+		self.id = config.get("TOTEM","ID")
 		self.topic = "TOTEMS/" + self.id
 		self.elenco_prenotazioni = dict()
 
@@ -49,8 +51,8 @@ class Bridge():
 		# open serial port
 		self.ser = None
 
-		if self.config.get("Serial","UseDescription", fallback=False):
-			self.portname = self.config.get("Serial","PortName", fallback="COM4")
+		if config.get("Serial","UseDescription", fallback=False):
+			self.portname = config.get("Serial","PortName", fallback="COM4")
 		else:
 			print("list of available ports: ")
 			ports = serial.tools.list_ports.comports()
@@ -58,7 +60,7 @@ class Bridge():
 			for port in ports:
 				print (port.device)
 				print (port.description)
-				if self.config.get("Serial","PortDescription", fallback="arduino").lower() \
+				if config.get("Serial","PortDescription", fallback="arduino").lower() \
 						in port.description.lower():
 					self.portname = port.device
 
@@ -76,21 +78,21 @@ class Bridge():
 
 	def setupMQTT(self):
 		self.clientMQTT = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv5)
-		MQTT_USER = self.config.get("MQTT", "MQTT_USERNAME")
-		MQTT_PWD = self.config.get("MQTT", "MQTT_PASSWORD")
+		MQTT_USER = config.get("MQTT", "MQTT_USERNAME")
+		MQTT_PWD = config.get("MQTT", "MQTT_PASSWORD")
 		self.clientMQTT.username_pw_set(MQTT_USER, MQTT_PWD)
 		self.clientMQTT.tls_set(tls_version=ssl.PROTOCOL_TLS, cert_reqs=ssl.CERT_NONE)
 		self.clientMQTT.on_connect = self.on_connect
 		self.clientMQTT.on_message = self.on_message
 		print("connecting to MQTT broker...")
 		self.clientMQTT.connect(
-			self.config.get("MQTT","MQTT_BROKER"),
-			self.config.getint("MQTT","Port"),
+			config.get("MQTT","MQTT_BROKER"),
+			config.getint("MQTT","Port"),
 			60)
 		self.clientMQTT.loop_start()
 
 	def setupHTTP(self):
-		self.APIURL = self.config.get("SERVER", "URL")
+		self.APIURL = config.get("SERVER", "URL")
 
 	def on_connect(self, client, userdata, flags, rc, properties=None):
 		print("Connected with result code " + str(rc))
@@ -98,7 +100,7 @@ class Bridge():
 		# Subscribing in on_connect() means that if we lose the connection and
 		# reconnect then subscriptions will be renewed.
 		self.clientMQTT.subscribe(self.topic)
-
+		self.topic_prenotazioni = 'TOTEMS/PRENOTAZIONI'
 
 	# The callback for when a PUBLISH message is received from the server.
 	# COMUNICAZIONE SERVER->BRIDGE->ARDUINO
@@ -107,16 +109,21 @@ class Bridge():
 
 		if msg.topic == self.topic:
 			#gestisci il messaggio e scrivi sulla seriale
-			#In msg c'è IDScompartimento/CODICE/IDPRENOTAZIONE/NFC_ID
+			#In msg c'è NFC_LIBRO/IDSCOMPARTIMENTO/CODICE/IDPRENOTAZIONE
 			msg = msg.payload.decode('utf-8')
-			msg = msg.split('/')
-			idscompartimento = int(msg[0])
-			codice = int(msg[1])
-			idprenotazione = int(msg[2])
 
-			if codice == NUM_SCOMPARTIMENTO:
+			if msg == '-1':
+				#ERRORE
+				return
+			
+			msg = msg.split('/')
+			nfc_id = int(msg[0])
+			idscompartimento = int(msg[1])
+			codice = int(msg[2])
+			idprenotazione = str(msg[3])
+			
+			if codice == self.LIBRO_PRONTO_PER_RITIRO or codice == self.LIBRO_IN_CONSEGNA:
 				self.elenco_prenotazioni[idscompartimento] = idprenotazione
-				nfc_id = str(msg[3])
 				self.outSeriale(idscompartimento, codice, nfc_id)
 			else:
 				self.outSeriale(idscompartimento, codice)
@@ -125,12 +132,13 @@ class Bridge():
 		"""
 		PACCHETTO
 		---------
-		FF|idscompartimento|codice|FE
+		FF|idscompartimento|codice|nfc_id|FE
 		"""
 		nfc_id = bytearray.fromhex(nfc_id)
 		idscompartimento = idscompartimento.to_bytes(2, 'little')
 
-		self.ser.write(BYTE_INIZIO.to_bytes(1, 'little'))
+		print("BRIDGE -> ARDUINO")
+		self.ser.write(self.BYTE_INIZIO.to_bytes(1, 'little'))
 		self.ser.write(idscompartimento[1].to_bytes(1, 'little'))
 		self.ser.write(idscompartimento[0].to_bytes(1, 'little'))
 		self.ser.write(codice.to_bytes(1, 'little'))
@@ -138,8 +146,7 @@ class Bridge():
 		self.ser.write(nfc_id[1].to_bytes(1,'little'))
 		self.ser.write(nfc_id[2].to_bytes(1,'little'))
 		self.ser.write(nfc_id[3].to_bytes(1,'little'))
-		self.ser.write(BYTE_FINE.to_bytes(1, 'little'))
-		print("BRIDGE -> ARDUINO")
+		self.ser.write(self.BYTE_FINE.to_bytes(1, 'little'))
 	
 	def outSerialeUpdate(self, stato_scompartimenti):
 		"""
@@ -147,16 +154,16 @@ class Bridge():
 		---------
 		FF|statoScomp1|statoScomp2|...|FE
 		"""
-
-		self.ser.write(BYTE_INIZIO.to_bytes(1, 'little'))
+		print("BRIDGE -> ARDUINO, UPDATE")
+		self.ser.write(self.BYTE_INIZIO.to_bytes(1, 'little'))
 		for stato in stato_scompartimenti:
 			self.ser.write(stato.to_bytes(1, 'little'))
-		self.ser.write(BYTE_FINE.to_bytes(1, 'little'))
-		print("BRIDGE -> ARDUINO")
+		self.ser.write(self.BYTE_FINE.to_bytes(1, 'little'))
 
 	def loop(self):
 		# infinite loop for serial managing
 		# COMUNICAZIONE ARDUINO->BRIDGE
+		
 		while (True):
 			#look for a byte from serial
 			if not self.ser is None:
@@ -190,28 +197,30 @@ class Bridge():
 		# nfc_id += str(self.inbuffer[6].decode('utf-8'))
 		# nfc_id += str(self.inbuffer[7].decode('utf-8'))
 
-		if idscompartimento == 0 and intero == RICHIESTA_UPDATE:
+		if idscompartimento == 0 and intero == 0:
+			#ERRORE
+			self.ui.setLabelMsg('Errore nella lettura dell\'nfc del libro, per favore ripetere la procedura')
+			return
+
+		if idscompartimento == 0 and intero == self.RICHIESTA_UPDATE:
 			#UPDATE RICHIESTO DALL'ARDUINO
 			self.httpRequestUpdate()
 
-		if intero == LIBRO_RICONSEGNATO:
+		if intero == self.LIBRO_RICONSEGNATO or intero == self.LIBRO_RITIRATO:
 			#risali al codice prenotazione associato e conferma al server il ritiro
 			if idscompartimento in self.elenco_prenotazioni:
 				idprenotazione = self.elenco_prenotazioni[idscompartimento]
 
-				self.httpRequest(idprenotazione, idscompartimento, 'consegnato')
+				if intero == self.LIBRO_RICONSEGNATO:
+					self.clientMQTT.publish(self.topic_prenotazioni, '{}/{}/{}/{}'.format(self.id, idprenotazione, 'consegnato', idscompartimento))
+					self.ui.setLabelMsg('Libro consegnato con successo!')
+				else:
+					self.clientMQTT.publish(self.topic_prenotazioni, '{}/{}/{}/{}'.format(self.id, idprenotazione, 'ritirato', idscompartimento))
+					self.ui.setLabelMsg('Libro ritirato con successo, buona lettura!')
 
 				del self.elenco_prenotazioni[idscompartimento]
 			else:
 				print("Codice prenotazione non trovato!")
-
-	#COMUNICAZIONE BRIDGE->SERVER
-	def httpRequest(self, idprenotazione, idscompartimento, codice):
-		d = {'totem_id': self.id, 'scompartimento_id': idscompartimento, 'stato': codice}
-		url = "{}/prenotazioni/{}".format(self.APIURL, idprenotazione)
-		print(url)
-		r = requests.put(url = url, json = d)
-		print(r.text)
 	
 	def httpRequestUpdate(self):
 		url = "{}/totems/{}".format(self.APIURL, self.id)
@@ -232,6 +241,58 @@ class Bridge():
 
 		self.outSerialeUpdate(scompartimenti)
 
+#INTERFACCIA GRAFICA
+class TotemApp(wx.Frame):    
+	def __init__(self):
+		super().__init__(parent=None, title='TOTEM {}'.format(config.get("TOTEM","ID")))
+        
+		panel = wx.Panel(self)        
+		my_sizer = wx.BoxSizer(wx.VERTICAL)   
+
+        #ELEMENTI A VIDEO   
+		self.text_ctrl = wx.TextCtrl(panel)
+		self.text_ctrl.SetHint('Inserisci l\'id della tua prenotazione')    
+		ritira_btn = wx.Button(panel, label='Ritira')
+		consegna_btn = wx.Button(panel, label='Consegna')
+		self.msg = wx.StaticText(panel,-1,'')
+
+        #PREMO UN BOTTONE
+		ritira_btn.Bind(wx.EVT_BUTTON, self.ritira)
+		consegna_btn.Bind(wx.EVT_BUTTON, self.consegna)
+
+        #AGGIUNGO GLI ELEMENTI A VIDEO AL PANNELLO PRINCIPALE
+		my_sizer.Add(self.text_ctrl, 0, wx.ALL | wx.EXPAND, 5)
+		my_sizer.Add(ritira_btn, 0, wx.ALL | wx.CENTER, 5)
+		my_sizer.Add(consegna_btn, 0, wx.ALL | wx.CENTER, 5)
+		my_sizer.Add(self.msg, 0, wx.ALL | wx.CENTER, 5)              
+		panel.SetSizer(my_sizer)        
+		self.Show()
+		self.br = Bridge(self)
+
+	def ritira(self, event):
+		idprenotazione = self.text_ctrl.GetValue()
+		if not idprenotazione.isnumeric():
+			self.msg.LabelText = 'ID Prenotazione non valido!'
+			return
+        
+		self.br.clientMQTT.publish(self.br.topic_prenotazioni, '{}/{}/{}'.format(self.br.id, idprenotazione, 'ritiro'))
+
+	def consegna(self, event):
+		idprenotazione = self.text_ctrl.GetValue()
+		if not idprenotazione.isnumeric():
+			self.msg.LabelText = 'ID Prenotazione non valido!'
+			return
+        
+		self.br.clientMQTT.publish(self.br.topic_prenotazioni, '{}/{}/{}'.format(self.br.id, idprenotazione, 'consegna'))
+
+	def setLabelMsg(self, msg):
+		self.msg.LabelText = msg
+
+
 if __name__ == '__main__':
-	br=Bridge()
-	br.loop()
+	config_path = pathlib.Path(__file__).parent.absolute() / "config.ini"
+	config = configparser.ConfigParser()
+	config.read(config_path)
+	app = wx.App()
+	frame = TotemApp()
+	app.MainLoop()

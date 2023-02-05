@@ -4,3 +4,4 @@ bridge/config.ini
 bot/config.py
 bot/example.py
 bot/__pycache__
+bridge/__pycache__
