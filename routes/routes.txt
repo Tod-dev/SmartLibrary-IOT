@@ -9,6 +9,3 @@ GET localhost:5000/totems/scompartimentolibero
     
 POST localhost:5000/prenotazioni 
     Inserisce una nuova prenotazione di un libro su un totem (parametri nel body) 
-
-PUT localhost:5000/prenotazioni/IDPRENOTAZIONE 
-    Aggiorna lo stato della prenotazione (parametro stato: prenotato, prelevato, consegnato) 
