@@ -41,7 +41,7 @@ create table prestiti(
 	libro_id int not null references libri(id),
 	data_inizio_prestito date not null,
 	data_fine_prestito date null,
-	stato varchar CONSTRAINT stato_values check (stato in ('prenotato', 'prelevato', 'consegnato', 'in consegna'))
+	stato varchar CONSTRAINT stato_values check (stato in ('prenotato', 'prelevato', 'consegnato'))
 );
 
 CREATE SEQUENCE serialPrestiti START 4;
