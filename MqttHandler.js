@@ -101,14 +101,14 @@ module.exports.sendMessage = async (topic, message) => {
 const updatePrenotazioneStart = async (idtotem, id_prenotazione, stato) => {
   try {
     if (stato != 'ritiro' && stato != 'consegna') {
-      throw { error: "stato is wrong: value must be in (ritiro, consegna) " };
+      throw { error: "-1/stato is wrong: value must be in (ritiro, consegna) " };
     }
     const { stato_prestito_attuale, scompartimento_id_attuale, libro_id_attuale, nfc_libro } = await get_dati_prenotazione(id_prenotazione);
     if (stato == 'ritiro' && stato_prestito_attuale != 'prenotato') {
-      throw { error: "Il libro non è nello stato prenotato! Impossibile prelevarlo." };
+      throw { error: "-1/Il libro non è nello stato prenotato! Impossibile prelevarlo." };
     }
     if (stato == 'consegna' && stato_prestito_attuale != 'ritirato') {
-      throw { error: "Il libro non è nello stato ritirato! Impossibile consegnarlo." };
+      throw { error: "-1/Il libro non è nello stato ritirato! Impossibile consegnarlo." };
     }
     //TUTTO OK -> SEND MQTT MESSAGE: IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE
     const codice = stato === 'ritiro' ? 2 : 3;
@@ -122,7 +122,7 @@ const updatePrenotazioneStart = async (idtotem, id_prenotazione, stato) => {
         [idtotem]
       )
       if (nuovo_scompartimento.length == 0) {
-        throw { erorr: `Spiacenti, ma il totem non ha scompartimenti liberi al momento` }
+        throw { erorr: `-1/Spiacenti, ma il totem non ha scompartimenti liberi al momento` }
       }
       scompartimento_assegnato = nuovo_scompartimento[0]["scompartimento_id"];
     }
@@ -136,14 +136,14 @@ const updatePrenotazioneStart = async (idtotem, id_prenotazione, stato) => {
 const updatePrenotazioneEnd = async (idtotem, id_prenotazione, stato, id_scompartimento) => {
   try {
     if (stato != 'ritirato' && stato != 'consegnato') {
-      throw { error: "stato is wrong: value must be in (ritirato, consegnato) " };
+      throw { error: "-1/stato is wrong: value must be in (ritirato, consegnato) " };
     }
     const { stato_prestito_attuale, scompartimento_id_attuale, libro_id_attuale, nfc_libro } = await get_dati_prenotazione(id_prenotazione);
     if (stato == 'ritirato' && stato_prestito_attuale != 'prenotato') {
-      throw { error: "Il libro non è nello stato prenotato! Impossibile prelevarlo." };
+      throw { error: "-1/Il libro non è nello stato prenotato! Impossibile prelevarlo." };
     }
     if (stato == 'consegnato' && stato_prestito_attuale != 'ritirato') {
-      throw { error: "Il libro non è nello stato ritirato! Impossibile consegnarlo." };
+      throw { error: "-1/Il libro non è nello stato ritirato! Impossibile consegnarlo." };
     }
     //TUTTO OK 
     // 1: AGGIORNA STATO PRENOTAZIONE
@@ -195,7 +195,7 @@ const get_dati_prenotazione = async (id_prenotazione) => {
       [id_prenotazione]
     )
     if (stato_prestito_rs.length == 0) {
-      throw { error: "prestito non esistente" };
+      throw { error: "-1/prestito non esistente" };
     }
     const stato_prestito_attuale = stato_prestito_rs[0]["stato"];
     const scompartimento_id_attuale = stato_prestito_rs[0]["scompartimento_id"];

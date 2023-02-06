@@ -71,8 +71,9 @@ exports.insertPrenotazione = async (req, res) => {
     //IDSCOMPARTIMENTO/CODICE/ID_PRENOTAZIONE
 
     const codice = 1;
+    const nfc_libro = '00000000'
     /* SEND MQTT MESSAGE to bridge*/
-    MqttHandler.sendMessage(totem_id, `${scompartimento_id}/${codice}/${id_prenotazione}`)
+    MqttHandler.sendMessage(totem_id, `${nfc_libro}/${scompartimento_id}/${codice}/${id_prenotazione}`)
 
     /* SEND RESPONSE TO BOT*/
     return { id: id_prenotazione, descrizione: `Prestito inserito correttamente, PRENOTAZIONE NUMERO: <b>${id_prenotazione}</b>\n${indirizzo}\n${maps_link}` };

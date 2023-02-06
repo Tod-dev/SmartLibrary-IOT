@@ -111,16 +111,17 @@ class Bridge():
 			#gestisci il messaggio e scrivi sulla seriale
 			#In msg c'è NFC_LIBRO/IDSCOMPARTIMENTO/CODICE/IDPRENOTAZIONE
 			msg = msg.payload.decode('utf-8')
+			msg = msg.split('/')
 
-			if msg == '-1':
+			if msg[0] == '-1':
 				#ERRORE
+				self.ui.setLabelMsg(msg[1])
 				return
 			
-			msg = msg.split('/')
-			nfc_id = int(msg[0])
+			nfc_id = str(msg[0])
 			idscompartimento = int(msg[1])
 			codice = int(msg[2])
-			idprenotazione = str(msg[3])
+			idprenotazione = int(msg[3])
 			
 			if codice == self.LIBRO_PRONTO_PER_RITIRO or codice == self.LIBRO_IN_CONSEGNA:
 				self.elenco_prenotazioni[idscompartimento] = idprenotazione
@@ -134,10 +135,11 @@ class Bridge():
 		---------
 		FF|idscompartimento|codice|nfc_id|FE
 		"""
+		print("BRIDGE -> ARDUINO | {}|{}|{}".format(idscompartimento, codice, nfc_id))
 		nfc_id = bytearray.fromhex(nfc_id)
 		idscompartimento = idscompartimento.to_bytes(2, 'little')
 
-		print("BRIDGE -> ARDUINO")
+		
 		self.ser.write(self.BYTE_INIZIO.to_bytes(1, 'little'))
 		self.ser.write(idscompartimento[1].to_bytes(1, 'little'))
 		self.ser.write(idscompartimento[0].to_bytes(1, 'little'))

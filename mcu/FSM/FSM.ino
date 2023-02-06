@@ -25,7 +25,11 @@ int readNFC()
   {
     key.keyByte[i] = 0xFF;
   }
-  
+
+  byte bufferATQA[4];
+  byte bufferSize = sizeof(bufferATQA);
+
+  nfcReader.PICC_WakeupA(bufferATQA, &bufferSize);
   unsigned long timer = millis();
   while(millis()-timer < NFC_READ_TIMEOUT)
   {
@@ -114,6 +118,7 @@ void performInActions()
     int resNFC = -1;
     int attempts = 0;
     bool checkIdOk = false;
+    int pg,pr;
     switch(code)
     {
       case 1:
@@ -121,8 +126,8 @@ void performInActions()
         break;
         
       case 2:
-        int pg = digitalRead(ledPins[idArr]);
-        int pr = digitalRead(ledPins[idArr]+1);
+        pg = digitalRead(ledPins[idArr]);
+        pr = digitalRead(ledPins[idArr]+1);
         attempts = 0;
         checkIdOk = false;
         
@@ -205,6 +210,7 @@ void loop()
     //read input 
     int val;
     val = Serial.read();
+    //Serial.print(val);
       
     //future state (default fstate = curstate)
     int fstate;
