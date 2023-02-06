@@ -15,8 +15,6 @@ int shelf;
 int code;
 int s;
 bool setupComplete;
-//byte byteNfcUID[4];
-//byte byteSerialUID[4];
 String stringNfcUID;
 String stringSerialUID;
 
@@ -35,23 +33,14 @@ int readNFC()
     {
       if (nfcReader.PICC_ReadCardSerial())
       {
-        //rfid.uid.size
-        //byte *byteUID = nfcReader.uid.uidByte;
         stringNfcUID = "";
         for (int i=0; i<LENGTH_UID; i++)
         {
           //byteNfcUID[i]=nfcReader.uid.uidByte[i];
           stringNfcUID += String(nfcReader.uid.uidByte[i], HEX);
         }
-        //unsigned long hexUID;
-        //hexUID = byteUID[0] << 24;
-        //hexUID += byteUID[1] << 16;
-        //hexUID += byteUID[2] << 8;
-        //hexUID += byteUID[3];
-        //long int intUID = (int)hexUID;
         nfcReader.PICC_HaltA(); //halt PICC
         nfcReader.PCD_StopCrypto1(); //stop encryption on PCD
-        //return intUID;
         return 1;
       }
     }
@@ -78,7 +67,6 @@ void changeLedColorShelf(int ledPin)
   digitalWrite(ledPin+1,!digitalRead(ledPin+1));
 }
 
-//usato solo quando da tutti i led spenti accendo quello verde quando il libro è stato riconsegnato
 void switchOnGreenShelfLed(int ledPin)
 {
   digitalWrite(ledPin,HIGH);
@@ -108,27 +96,12 @@ void buzzerError(int inter)
   noTone(BUZ_PIN);
 }
 
-//void sendToBridge(int intero, int shl, byte *nfcUID=-1)
 void sendToBridge(int intero, int shl)
 {
   
   Serial.write(0XFF);
   Serial.write(highByte(shl));
   Serial.write(lowByte(shl));
-  /*if (nfcUID>0)
-  {
-    for (int i=0; i<LENGTH_UID; i++)
-    {
-      Serial.write(nfcUID[i]);
-    }
-  }
-  else
-  {
-    for (int i=0; i<LENGTH_UID; i++)
-    {
-      Serial.write(0);
-    }
-  }*/
   Serial.write(intero);
   Serial.write(0XFE);
 }
@@ -138,7 +111,9 @@ void performInActions()
   int idArr = findIdArr(shelf);
   if (idArr >= 0)
   {
-    int resNFC;
+    int resNFC = -1;
+    int attempts = 0;
+    bool checkIdOk = false;
     switch(code)
     {
       case 1:
@@ -146,6 +121,11 @@ void performInActions()
         break;
         
       case 2:
+        int pg = digitalRead(ledPins[idArr]);
+        int pr = digitalRead(ledPins[idArr]+1);
+        attempts = 0;
+        checkIdOk = false;
+        
         switchOnAllShelfLeds(ledPins[idArr]);
         do
         {
@@ -154,17 +134,23 @@ void performInActions()
           {
             buzzerError(2000);
           }
+          else
+          {
+            checkIdOk = (stringSerialUID == stringNfcUID);
+          }
+          attempts += 1;
         }
-        while(resNFC < 0);  
-        switchOffAllShelfLeds(ledPins[idArr]);
-        //sendToBridge(1, shelf, byteNfcUID);
-        sendToBridge(1, shelf);
+        while(!checkIdOk && attempts <= 2);
+
+        if (checkIdOk) {switchOffAllShelfLeds(ledPins[idArr]); sendToBridge(1, shelf);}
+        else {digitalWrite(ledPins[idArr], pg); digitalWrite(ledPins[idArr]+1, pr); sendToBridge(0, 0);}
         break;
         
       case 3:
+        attempts = 0;
+        checkIdOk = false;
+        
         switchOnAllShelfLeds(ledPins[idArr]);
-        int attempts = 0;
-        bool checkIdOk = false;
         do
         {
           resNFC = readNFC();
@@ -172,14 +158,16 @@ void performInActions()
           {
             buzzerError(2000);
           }
-          checkIdOk = (stringSerialUID == stringNfcUID);
+          else
+          {
+            checkIdOk = (stringSerialUID == stringNfcUID);
+          }
           attempts += 1;
         }
-        while(((resNFC < 0) || !checkIdOk) && attempts < 3);
-        //sendToBridge(2, shelf, byteNfcUID);
-        
-        if (checkIdOk) {sendToBridge(2, shelf); switchOnGreenShelfLed(ledPins[idArr]);}
-        else switchOffAllShelfLeds(ledPins[idArr]);        
+        while(!checkIdOk && attempts <= 2);
+                
+        if (checkIdOk) {switchOnGreenShelfLed(ledPins[idArr]); sendToBridge(2, shelf);}
+        else {switchOffAllShelfLeds(ledPins[idArr]); sendToBridge(0, 0);}        
         break;
     }
   }
