@@ -117,6 +117,7 @@ class Bridge():
 			if msg[0] == '-1':
 				#ERRORE
 				self.ui.setLabelMsg(msg[1])
+				self.ui.msg.Center(wx.HORIZONTAL)
 				return
 			
 			nfc_id = str(msg[0])
@@ -203,6 +204,7 @@ class Bridge():
 		if idscompartimento == 0 and intero == 0:
 			#ERRORE
 			self.ui.setLabelMsg('Errore nella lettura dell\'nfc del libro, per favore ripetere la procedura')
+			self.ui.msg.Center(wx.HORIZONTAL)
 			return
 
 		if idscompartimento == 0 and intero == self.RICHIESTA_UPDATE:
@@ -217,9 +219,11 @@ class Bridge():
 				if intero == self.LIBRO_RICONSEGNATO:
 					self.clientMQTT.publish(self.topic_prenotazioni, '{}/{}/{}/{}'.format(self.id, idprenotazione, 'consegnato', idscompartimento))
 					self.ui.setLabelMsg('Libro consegnato con successo!')
+					self.ui.msg.Center(wx.HORIZONTAL)
 				else:
 					self.clientMQTT.publish(self.topic_prenotazioni, '{}/{}/{}/{}'.format(self.id, idprenotazione, 'ritirato', idscompartimento))
 					self.ui.setLabelMsg('Libro ritirato con successo, buona lettura!')
+					self.ui.msg.Center(wx.HORIZONTAL)
 
 				del self.elenco_prenotazioni[idscompartimento]
 			else:
@@ -247,16 +251,18 @@ class Bridge():
 #INTERFACCIA GRAFICA
 class TotemApp(wx.Frame):    
 	def __init__(self):
-		super().__init__(parent=None, title='TOTEM {}'.format(config.get("TOTEM","ID")))
+		id = config.get("TOTEM","ID")
+		super().__init__(parent=None, title='TOTEM {}'.format(id), size=(600,600))
         
-		panel = wx.Panel(self)        
+		panel = wx.Panel(self)
 		my_sizer = wx.BoxSizer(wx.VERTICAL)   
 
         #ELEMENTI A VIDEO   
+		title = wx.StaticText(panel,-1,'TOTEM {}'.format(id))
 		self.text_ctrl = wx.TextCtrl(panel)
 		self.text_ctrl.SetHint('Inserisci l\'id della tua prenotazione')    
-		ritira_btn = wx.Button(panel, label='Ritira')
-		consegna_btn = wx.Button(panel, label='Consegna')
+		ritira_btn = wx.Button(panel, label='Ritira', size=(100,30))
+		consegna_btn = wx.Button(panel, label='Consegna', size=(100,30))
 		self.msg = wx.StaticText(panel,-1,'')
 
         #PREMO UN BOTTONE
@@ -264,11 +270,13 @@ class TotemApp(wx.Frame):
 		consegna_btn.Bind(wx.EVT_BUTTON, self.consegna)
 
         #AGGIUNGO GLI ELEMENTI A VIDEO AL PANNELLO PRINCIPALE
+		my_sizer.Add(title, 0, wx.ALL | wx.CENTER, 5)
 		my_sizer.Add(self.text_ctrl, 0, wx.ALL | wx.EXPAND, 5)
 		my_sizer.Add(ritira_btn, 0, wx.ALL | wx.CENTER, 5)
 		my_sizer.Add(consegna_btn, 0, wx.ALL | wx.CENTER, 5)
-		my_sizer.Add(self.msg, 0, wx.ALL | wx.CENTER, 5)              
-		panel.SetSizer(my_sizer)        
+		my_sizer.Add(self.msg, 0, wx.ALL | wx.CENTER, 5)             
+		panel.SetSizer(my_sizer)    
+		self.Centre()    
 		self.Show()
 		self.br = Bridge(self)
 
@@ -277,6 +285,7 @@ class TotemApp(wx.Frame):
 		idprenotazione = self.text_ctrl.GetValue()
 		if not idprenotazione.isnumeric():
 			self.msg.LabelText = 'ID Prenotazione non valido!'
+			self.msg.Center(wx.HORIZONTAL)
 			return
 		
 		self.br.clientMQTT.publish(self.br.topic_prenotazioni, '{}/{}/{}'.format(self.br.id, idprenotazione, 'ritiro'))
@@ -286,6 +295,7 @@ class TotemApp(wx.Frame):
 		idprenotazione = self.text_ctrl.GetValue()
 		if not idprenotazione.isnumeric():
 			self.msg.LabelText = 'ID Prenotazione non valido!'
+			self.msg.Center(wx.HORIZONTAL)
 			return
         
 		self.br.clientMQTT.publish(self.br.topic_prenotazioni, '{}/{}/{}'.format(self.br.id, idprenotazione, 'consegna'))

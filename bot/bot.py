@@ -26,6 +26,7 @@ def help(update, context):
     """Send a message when the command /now is issued."""
     operazioniDesc = map(lambda x: '/{} , {} un libro.'.format(x,x), getOperations())
     text = '\n'.join(operazioniDesc)
+    text += '\n'+'/totem , visualizza i libri contenuti in un totem'
     update.message.reply_text(text)
 
 
@@ -144,6 +145,48 @@ def consigliami(update, context):
         print("ERRORE: {}".format(e))
         update.message.reply_text("Errore nella lettura dei totem liberi")
 
+def totem(update, context):
+    """Send a message when the command /now is issued."""
+    print(update.message.text)
+    
+    msg = update.message.text.split('/totem ')
+    if len(msg) == 1:
+        #ho solo la scritta /prenota
+        return update.message.reply_text("Per vedere i libri contenuti in un totem inserisci /totem seguito dal numero del totem")
+        
+    try:
+
+        #ho anche l'id del totem
+        id = msg[1]
+        
+        r = requests.get('{}/totems/{}'.format(SERVER_URL, id))
+        print(r.text)
+        if r.text == '[]':
+            update.message.reply_text('Il totem {} non è attivo'.format(id))
+            return
+        
+        r = json.loads(r.text)
+        risposta = 'Ecco i libri contenuti nel totem {}\n'.format(id)
+        num_libri = 0
+        for libro in r:
+            nome_libro = libro['nome_libro']
+            disponibilita = libro['stato_scompartimento']
+
+            if disponibilita == 'occupato':
+                disponibilita = 'disponibile'
+
+            if nome_libro is not None:
+                risposta += '{}, <b>{}</b>\n'.format(nome_libro, disponibilita)
+                num_libri += 1
+
+        if num_libri == 0:
+            update.message.reply_text('Il totem {} è vuoto al momento'.format(id))
+        else:
+            update.message.reply_text(risposta, parse_mode='HTML')
+    except Exception as e:
+        print("ERRORE: {}".format(e))
+        update.message.reply_text("Errore nella lettura dei libri del totem")
+
 #START BOT
 def startBot():
     global updater
@@ -157,6 +200,7 @@ def startBot():
     dp.add_handler(CommandHandler("prenota", prenota))
     dp.add_handler(CommandHandler("consegna", consegna))
     dp.add_handler(CommandHandler("consigliami", consigliami))
+    dp.add_handler(CommandHandler("totem", totem))
     
     updater.start_polling()
     return updater
