@@ -38,13 +38,15 @@ class Bridge():
 		self.setupTotem()
 		self.setupSerial()
 		self.setupHTTP()
-		self.setupMQTT()
+		mqtt_thread = threading.Thread(target=self.setupMQTT)
+		mqtt_thread.start()
 		serial_thread = threading.Thread(target=self.loop)
 		serial_thread.start()
     
 	def setupTotem(self):
 		self.id = config.get("TOTEM","ID")
 		self.topic = "TOTEMS/" + self.id
+		self.topic_prenotazioni = 'TOTEMS/PRENOTAZIONI'
 		self.elenco_prenotazioni = dict()
 
 	def setupSerial(self):
@@ -100,7 +102,6 @@ class Bridge():
 		# Subscribing in on_connect() means that if we lose the connection and
 		# reconnect then subscriptions will be renewed.
 		self.clientMQTT.subscribe(self.topic)
-		self.topic_prenotazioni = 'TOTEMS/PRENOTAZIONI'
 
 	# The callback for when a PUBLISH message is received from the server.
 	# COMUNICAZIONE SERVER->BRIDGE->ARDUINO
@@ -242,7 +243,7 @@ class Bridge():
 				scompartimenti[i] = 3
 
 		self.outSerialeUpdate(scompartimenti)
-
+	
 #INTERFACCIA GRAFICA
 class TotemApp(wx.Frame):    
 	def __init__(self):
@@ -272,14 +273,16 @@ class TotemApp(wx.Frame):
 		self.br = Bridge(self)
 
 	def ritira(self, event):
+		self.msg.LabelText = ''
 		idprenotazione = self.text_ctrl.GetValue()
 		if not idprenotazione.isnumeric():
 			self.msg.LabelText = 'ID Prenotazione non valido!'
 			return
-        
+		
 		self.br.clientMQTT.publish(self.br.topic_prenotazioni, '{}/{}/{}'.format(self.br.id, idprenotazione, 'ritiro'))
 
 	def consegna(self, event):
+		self.msg.LabelText = ''
 		idprenotazione = self.text_ctrl.GetValue()
 		if not idprenotazione.isnumeric():
 			self.msg.LabelText = 'ID Prenotazione non valido!'
