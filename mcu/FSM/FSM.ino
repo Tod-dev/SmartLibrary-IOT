@@ -1,7 +1,7 @@
 #include <MFRC522.h>
 #include <SPI.h>
 #define SDA_PIN 10
-#define RST_PIN 9
+#define RST_PIN 2 //scollegato
 #define BUZ_PIN 14
 #define LENGTH_UID 4
 #define NFC_READ_TIMEOUT 10000
