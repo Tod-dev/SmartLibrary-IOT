@@ -128,6 +128,10 @@ class Bridge():
 			if codice == self.LIBRO_PRONTO_PER_RITIRO or codice == self.LIBRO_IN_CONSEGNA:
 				self.elenco_prenotazioni[idscompartimento] = idprenotazione
 				self.outSeriale(idscompartimento, codice, nfc_id)
+
+				if codice == self.LIBRO_IN_CONSEGNA:
+					self.ui.setLabelMsg('Consegna abilitata nello scompartimento {}'.format(idscompartimento))
+					self.ui.msg.Center(wx.HORIZONTAL)
 			else:
 				self.outSeriale(idscompartimento, codice)
 		

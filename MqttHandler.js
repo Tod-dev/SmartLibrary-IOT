@@ -122,7 +122,7 @@ const updatePrenotazioneStart = async (idtotem, id_prenotazione, stato) => {
         [idtotem]
       )
       if (nuovo_scompartimento.length == 0) {
-        throw { erorr: `-1/Spiacenti, ma il totem non ha scompartimenti liberi al momento` }
+        throw { error: `-1/Spiacenti, ma il totem non ha scompartimenti liberi al momento` }
       }
       scompartimento_assegnato = nuovo_scompartimento[0]["scompartimento_id"];
     }
