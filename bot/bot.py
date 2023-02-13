@@ -118,7 +118,7 @@ def consigliami(update, context):
         #ho solo la scritta /consigliami
         return update.message.reply_text("Per consigliarti un libro scrivi /consigliami seguito dal nome dell' ultimo libro che hai letto ")
     try:
-        if hasAtLeastOneReading and r["libro"]:
+        if hasAtLeastOneReading and r["libro"] and len(msg) == 1:
             libro = r["libro"] 
         else:
             libro = msg[1]
