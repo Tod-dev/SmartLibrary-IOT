@@ -7,6 +7,129 @@
 	},
 	"item": [
 		{
+			"name": "old",
+			"item": [
+				{
+					"name": "update stato prenotazione",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"stato\": \"prelevato\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/prenotazioni/78",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"prenotazioni",
+								"78"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "consegnato",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"stato\" : \"consegnato\",\n    \"scompartimento_id\": 3\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/prenotazioni/56",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"prenotazioni",
+										"56"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "prelevato",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"stato\": \"prelevato\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/prenotazioni/56",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"prenotazioni",
+										"56"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "in consegna",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"stato\" : \"in consegna\",\n    \"totem_id\" : 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/prenotazioni/78",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"prenotazioni",
+										"78"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "get totem",
 			"request": {
 				"method": "GET",
@@ -89,124 +212,6 @@
 			"response": []
 		},
 		{
-			"name": "update stato prenotazione",
-			"request": {
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"stato\": \"prelevato\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{url}}/prenotazioni/78",
-					"host": [
-						"{{url}}"
-					],
-					"path": [
-						"prenotazioni",
-						"78"
-					]
-				}
-			},
-			"response": [
-				{
-					"name": "consegnato",
-					"originalRequest": {
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"stato\" : \"consegnato\",\n    \"scompartimento_id\": 3\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{url}}/prenotazioni/56",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"prenotazioni",
-								"56"
-							]
-						}
-					},
-					"_postman_previewlanguage": null,
-					"header": null,
-					"cookie": [],
-					"body": null
-				},
-				{
-					"name": "prelevato",
-					"originalRequest": {
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"stato\": \"prelevato\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{url}}/prenotazioni/56",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"prenotazioni",
-								"56"
-							]
-						}
-					},
-					"_postman_previewlanguage": null,
-					"header": null,
-					"cookie": [],
-					"body": null
-				},
-				{
-					"name": "in consegna",
-					"originalRequest": {
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"stato\" : \"in consegna\",\n    \"totem_id\" : 1\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{url}}/prenotazioni/78",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"prenotazioni",
-								"78"
-							]
-						}
-					},
-					"_postman_previewlanguage": null,
-					"header": null,
-					"cookie": [],
-					"body": null
-				}
-			]
-		},
-		{
 			"name": "totems con almeno uno scompartimentolibero",
 			"request": {
 				"method": "GET",
@@ -219,6 +224,31 @@
 					"path": [
 						"totems",
 						"scompartimentolibero"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get last libro letto",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/prenotazioni/last/libro?utente=marc0todar0",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"prenotazioni",
+						"last",
+						"libro"
+					],
+					"query": [
+						{
+							"key": "utente",
+							"value": "marc0todar0"
+						}
 					]
 				}
 			},
