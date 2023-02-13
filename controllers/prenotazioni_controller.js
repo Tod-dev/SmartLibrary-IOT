@@ -108,7 +108,7 @@ exports.getLastLibroLetto = async (req, res) => {
     if (utente_rows.length == 0) {      
       return { id: -1, libro: "Nessun libro letto dall'utente" }
     }
-    const libro = utente_rows[0]["id"];
+    const libro = utente_rows[0];
 
     /* SEND RESPONSE TO BOT*/
     return { id: libro.id, libro: libro.nome };
