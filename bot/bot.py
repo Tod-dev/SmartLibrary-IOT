@@ -100,11 +100,29 @@ def consigliami(update, context):
     print(update.message.text)
     #RITORNARE La lista di libri consigliati dall'ai
     msg = update.message.text.split('/consigliami ')
-    if len(msg) == 1:
+    username = update.message.chat.username
+
+    r = requests.get('{}/prenotazioni/last/libro?utente={}'.format(SERVER_URL, username))
+    if r.text == '[]':
+        update.message.reply_text("Spiacenti, errore nel reperimento dell'ultimo libro letto")
+        return
+    
+    r = json.loads(r.text)
+    print(r)
+    hasAtLeastOneReading = True
+    if(r["id"] == -1):
+        hasAtLeastOneReading = False
+    
+
+    if len(msg) == 1 and (not hasAtLeastOneReading):
         #ho solo la scritta /consigliami
         return update.message.reply_text("Per consigliarti un libro scrivi /consigliami seguito dal nome dell' ultimo libro che hai letto ")
     try:
-        libro = msg[1]
+        if hasAtLeastOneReading and r["libro"]:
+            libro = r["libro"] 
+        else:
+            libro = msg[1]
+        print(libro)
         r = requests.get('https://data.readow.ai/api/titles/quick/0?tokens={}'.format(libro))
         print(r.text)
         if r.text == '[]':

@@ -82,6 +82,40 @@ exports.insertPrenotazione = async (req, res) => {
   }
 };
 
+/*
+  getLastLibroLetto
+  params  ["utente": "matteberto99"]
+  Restituisce l'ultimo libro dall'utente
+*/
+exports.getLastLibroLetto = async (req, res) => {
+  try {
+    const utente = req.query["utente"];
+
+    if (!utente) {
+      throw { error: "utente  is missing" };
+    }
+
+    const { rows: utente_rows } = await db.query(`
+    select libri.*
+    from prestiti
+    join libri on libri.id = prestiti.libro_id
+    join utenti on utenti.id = prestiti.utente_id 
+    where utenti.username = $1
+    order by prestiti.id DESC
+    limit 1`,
+      [utente]
+    )
+    if (utente_rows.length == 0) {      
+      return { id: -1, libro: "Nessun libro letto dall'utente" }
+    }
+    const libro = utente_rows[0]["id"];
+
+    /* SEND RESPONSE TO BOT*/
+    return { id: libro.id, libro: libro.nome };
+  } catch (error) {
+    throw error;
+  }
+}
 
 /*
   updatePrenotazione
@@ -91,7 +125,7 @@ exports.insertPrenotazione = async (req, res) => {
     "totem_id" [optional],
     "scompartimento_id" [optional]
   }
-  Aggiorna lo stato della prenotazione (parametro stato: prenotato, prelevato, consegnato ) 
+  Aggiorna lo stato della prenotazione (parametro stato: prenotato, prelevato, consegnato )
 */
 // exports.updatePrenotazione = async (id_prenotazione, params) => {
 //   try {
