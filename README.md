@@ -8,3 +8,5 @@ Si tratta di una biblioteca distribuita geograficamente attraversi vari totem au
 ![Architettura](./docs/architettura.png)
 
 ![Circuito](./docs/circuito.png)
+
+![Totem](./docs/totem.jpeg)
